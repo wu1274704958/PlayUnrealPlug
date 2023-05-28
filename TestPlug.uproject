@@ -7,7 +7,7 @@
 		{
 			"Name": "TestPlug",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostConfigInit"
 		}
 	],
 	"Plugins": [

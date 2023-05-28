@@ -10,7 +10,16 @@ public class TestPlug : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore" });
+		
+		PublicIncludePaths.AddRange(new string[]
+		{
+			"TestPlug/CustomComponent/Classes"
+		});
+		PrivateIncludePaths.AddRange(new string[]
+		{
+			"TestPlug/CustomComponent/Private"
+		});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
