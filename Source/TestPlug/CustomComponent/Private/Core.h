@@ -5,13 +5,15 @@
 struct FCustomMeshVertexFactory;
 class FCustomMeshSceneProxy;
 class FCustomMeshVertexFactoryShaderParameters;
+class UMyMeshComponent;
+struct FMyMeshSection;
 
 struct FCustomMeshVertexFactory : FLocalVertexFactory
 {
 	DECLARE_VERTEX_FACTORY_TYPE(FCustomMeshVertexFactory);
 
-	FCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel, const char* InDebugName)
-		: FLocalVertexFactory(InFeatureLevel, InDebugName),SceneProxy(nullptr)
+	FCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel)
+		: FLocalVertexFactory(InFeatureLevel, "FCustomMeshVertexFactory"),SceneProxy(nullptr)
 	{
 		bSupportsManualVertexFetch = false;
 	}
@@ -27,6 +29,17 @@ private:
 
 static void InitOrUpdateResource(FRenderResource& Resource);
 
+class FCustomMeshSctionProxy
+{
+public:
+	UMaterialInterface* Material;
+	FRawStaticIndexBuffer IndexBuffer;
+	FCustomMeshVertexFactory VertexFactory;
+	bool bVisible;
+	uint32_t MaxVertexIndex;
+	FCustomMeshSctionProxy(ERHIFeatureLevel::Type InFeatureLevel);
+};
+
 class FCustomMeshSceneProxy final : public FPrimitiveSceneProxy
 {
 public:
@@ -35,12 +48,12 @@ public:
 		static size_t UniquePointer;
 		return reinterpret_cast<SIZE_T>(&UniquePointer);
 	}
-	FCustomMeshSceneProxy(UMyMeshComponent* Component) : FPrimitiveSceneProxy(Component),
-	MaterialRelevance(Component->GetMaterialRelevance(GetScene().GetFeatureLevel()))
-	{
-		
-	}
+
+	TSharedPtr<FCustomMeshSctionProxy> CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const;
+	FCustomMeshSceneProxy(UMyMeshComponent* Component);
+	virtual ~FCustomMeshSceneProxy() override;
 
 private:
 	FMaterialRelevance MaterialRelevance;
+	TArray<TSharedPtr<FCustomMeshSctionProxy>> Sections;
 };

@@ -3,6 +3,25 @@
 
 #include "MyMeshComponent.h"
 
+FMyMeshSection::FMyMeshSection() : StaticMesh(nullptr), Bounds(FBox(FVector::ZeroVector, FVector::OneVector)), bVisible(false)
+{
+}
+
+FMyMeshSection::FMyMeshSection(UStaticMesh* StaticMesh, const FBox& Bounds, bool bVisible)
+		: StaticMesh(StaticMesh),
+		  Bounds(Bounds),
+		  bVisible(bVisible)
+{
+}
+
+void FMyMeshSection::Reset()
+{
+	StaticMesh = nullptr;
+	Bounds = FBox(FVector::ZeroVector, FVector::OneVector);
+	bVisible = false;
+}
+
+
 // Sets default values for this component's properties
 UMyMeshComponent::UMyMeshComponent()
 {

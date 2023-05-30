@@ -8,7 +8,7 @@ public class TestPlug : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","RHI" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore" });
 		
@@ -18,7 +18,7 @@ public class TestPlug : ModuleRules
 		});
 		PrivateIncludePaths.AddRange(new string[]
 		{
-			"TestPlug/CustomComponent/Private"
+			"TestPlug"
 		});
 
 		// Uncomment if you are using Slate UI
