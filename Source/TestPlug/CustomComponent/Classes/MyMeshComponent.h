@@ -42,13 +42,23 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
+	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+	void UpdateLocalBounds();
+	void CreateMeshSection(int32 Index,UStaticMesh *StaticMesh);
+	void ClearMeshSection(int32 Index);
+	void ClearAllMeshSections();
+	int32 GetNumMeshSections() const;
+	void SetMeshSectionVisibility(int32 Index, bool Visible);
+	bool IsMeshSectionVisible(int32 Index) const;
+	virtual int32 GetNumMaterials() const override;
 
 private:
 	UPROPERTY(VisibleAnywhere)
 	TArray<FMyMeshSection> Sections;
 
 	UPROPERTY(VisibleAnywhere)
-	FBoxSphereBounds Bounds;
+	FBoxSphereBounds LocalBounds;
 
 	friend class FCustomMeshSceneProxy;
 };

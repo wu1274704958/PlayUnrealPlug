@@ -27,9 +27,7 @@ private:
 	friend class FCustomMeshVertexFactoryShaderParameters;
 };
 
-static void InitOrUpdateResource(FRenderResource& Resource);
-
-class FCustomMeshSctionProxy
+class FCustomMeshSectionProxy
 {
 public:
 	UMaterialInterface* Material;
@@ -37,7 +35,7 @@ public:
 	FCustomMeshVertexFactory VertexFactory;
 	bool bVisible;
 	uint32_t MaxVertexIndex;
-	FCustomMeshSctionProxy(ERHIFeatureLevel::Type InFeatureLevel);
+	FCustomMeshSectionProxy(ERHIFeatureLevel::Type InFeatureLevel);
 };
 
 class FCustomMeshSceneProxy final : public FPrimitiveSceneProxy
@@ -49,11 +47,37 @@ public:
 		return reinterpret_cast<SIZE_T>(&UniquePointer);
 	}
 
-	TSharedPtr<FCustomMeshSctionProxy> CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const;
+	TSharedPtr<FCustomMeshSectionProxy> CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const;
 	FCustomMeshSceneProxy(UMyMeshComponent* Component);
 	virtual ~FCustomMeshSceneProxy() override;
 
+	void SetSectionVisibility_RenderThread(int SectionIndex,bool bVisible);
+
+	virtual uint32 GetMemoryFootprint( void ) const override { return( sizeof( *this ) + GetAllocatedSize() ); }
+	uint32 GetAllocatedSize( void ) const { return( FPrimitiveSceneProxy::GetAllocatedSize() + Sections.GetAllocatedSize() ); }
+	virtual bool CanBeOccluded() const override;
+	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override;
+	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily,
+		uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
+
 private:
 	FMaterialRelevance MaterialRelevance;
-	TArray<TSharedPtr<FCustomMeshSctionProxy>> Sections;
+	TArray<TSharedPtr<FCustomMeshSectionProxy>> Sections;
+};
+
+class FCustomMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
+{
+	DECLARE_TYPE_LAYOUT(FCustomMeshVertexFactoryShaderParameters, NonVirtual);
+public:
+	void Bind(const FShaderParameterMap& ParameterMap){}
+	void GetElementShaderBindings(
+		const class FSceneInterface* Scene,
+		const FSceneView* View,
+		const FMeshMaterialShader* Shader,
+		const EVertexInputStreamType InputStreamType,
+		ERHIFeatureLevel::Type FeatureLevel,
+		const FVertexFactory* VertexFactory,
+		const FMeshBatchElement& BatchElement,
+		class FMeshDrawSingleShaderBindings& ShaderBindings,
+		FVertexInputStreamArray& VertexStreams) const;
 };

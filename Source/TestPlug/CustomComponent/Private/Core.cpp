@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "MyMeshComponent.h"
 
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FCustomMeshVertexFactory,"/Shaders/CustomMeshVertexFactory.ush",true,true,true,true,true,true,true);
+
 
 void FCustomMeshVertexFactory::InitRHI()
 {
@@ -21,15 +21,7 @@ void FCustomMeshVertexFactory::ModifyCompilationEnvironment(const FVertexFactory
 	FLocalVertexFactory::ModifyCompilationEnvironment(Parameters,OutEnv);
 }
 
-void InitOrUpdateResource(FRenderResource& Resource)
-{
-	if(Resource.IsInitialized())
-		Resource.UpdateRHI();
-	else
-		Resource.InitResource();
-}
-
-void InitVertexFactoryData(FCustomMeshVertexFactory& VertexFactory,const FStaticMeshVertexBuffers& VertexBuffers,int32_t LightMapCoordinateIndex)
+void InitVertexFactoryData(FCustomMeshVertexFactory& VertexFactory,FStaticMeshVertexBuffers& VertexBuffers,int32_t LightMapCoordinateIndex)
 {
 	ENQUEUE_RENDER_COMMAND(StaticMeshVertexBuffersInit)(
 		[&](FRHICommandListImmediate& RHICmdList)
@@ -48,8 +40,8 @@ void InitVertexFactoryData(FCustomMeshVertexFactory& VertexFactory,const FStatic
 }
 
 
-FCustomMeshSctionProxy::FCustomMeshSctionProxy(ERHIFeatureLevel::Type InFeatureLevel) :
-	Material(nullptr),bVisible(true),MaxVertexIndex(0),VertexFactory(InFeatureLevel)
+FCustomMeshSectionProxy::FCustomMeshSectionProxy(ERHIFeatureLevel::Type InFeatureLevel) :
+	Material(nullptr),VertexFactory(InFeatureLevel),bVisible(true),MaxVertexIndex(0)
 {
 	
 }
@@ -63,26 +55,154 @@ FCustomMeshSceneProxy::FCustomMeshSceneProxy(UMyMeshComponent* Component) : FPri
 		Sections[i] = CreateSectionProxy(i,Component->Sections[i],*Component);
 	}
 }
-TSharedPtr<FCustomMeshSctionProxy> FCustomMeshSceneProxy::CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const
+TSharedPtr<FCustomMeshSectionProxy> FCustomMeshSceneProxy::CreateSectionProxy(int SectionIndex,const FMyMeshSection& Section,const UMyMeshComponent& Component) const
 {
-	TSharedPtr<FCustomMeshSctionProxy> Proxy = MakeShared<FCustomMeshSctionProxy>(GetScene().GetFeatureLevel());
-	Proxy->bVisible = Element.bVisible;
+	TSharedPtr<FCustomMeshSectionProxy> Proxy = MakeShared<FCustomMeshSectionProxy>(GetScene().GetFeatureLevel());
+	Proxy->bVisible = Section.bVisible;
 	Proxy->Material = Component.GetMaterial(SectionIndex);
-	const auto& LodResource = Element.StaticMesh->GetRenderData()->LODResources[0];
-	InitVertexFactoryData(Proxy->VertexFactory,LodResource.VertexBuffers,Element.StaticMesh->GetLightMapCoordinateIndex());
+	if(Proxy->Material == nullptr)
+		Proxy-> Material = UMaterial::GetDefaultMaterial(MD_Surface);
+	auto& LodResource = Section.StaticMesh->GetRenderData()->LODResources[0];
+	InitVertexFactoryData(Proxy->VertexFactory,LodResource.VertexBuffers,Section.StaticMesh->GetLightMapCoordinateIndex());
 	{
 		TArray<uint32_t> TmpIndices;
 		LodResource.IndexBuffer.GetCopy(TmpIndices);
 		Proxy->IndexBuffer.AppendIndices(TmpIndices.GetData(),TmpIndices.Num());
 		BeginInitResource(&Proxy->IndexBuffer);
 	}
-	
+	Proxy->MaxVertexIndex = LodResource.VertexBuffers.PositionVertexBuffer.GetNumVertices() - 1;
 	return Proxy;
 }
 
 FCustomMeshSceneProxy::~FCustomMeshSceneProxy()
 {
+	for(const auto& Section : Sections)
+	{
+		Section->VertexFactory.ReleaseResource();
+		Section->IndexBuffer.ReleaseResource();
+	}
 	Sections.Reset();
 }
+
+void FCustomMeshSceneProxy::SetSectionVisibility_RenderThread(int SectionIndex, bool bVisible)
+{
+	check(IsInRenderingThread());
+	if(SectionIndex < Sections.Num() && Sections[SectionIndex].IsValid())
+	{
+		Sections[SectionIndex]->bVisible = bVisible;
+	}
+}
+
+bool FCustomMeshSceneProxy::CanBeOccluded() const
+{
+	return !MaterialRelevance.bDisableDepthTest;
+}
+
+FPrimitiveViewRelevance FCustomMeshSceneProxy::GetViewRelevance(const FSceneView* View) const
+{
+	FPrimitiveViewRelevance Result;
+	Result.bDrawRelevance = IsShown(View);
+	Result.bShadowRelevance = IsShadowCast(View);
+	Result.bDynamicRelevance = true;
+	Result.bRenderInMainPass = ShouldRenderInMainPass();
+	Result.bUsesLightingChannels = GetLightingChannelMask() != GetDefaultLightingChannelMask();
+	Result.bRenderCustomDepth = ShouldRenderCustomDepth();
+	Result.bTranslucentSelfShadow = bCastVolumetricTranslucentShadow;
+	MaterialRelevance.SetPrimitiveViewRelevance(Result);
+	Result.bVelocityRelevance = IsMovable() && Result.bOpaque && Result.bRenderInMainPass;
+	return Result;
+}
+
+void FCustomMeshSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views,
+	const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
+{
+	const bool bWireframe = AllowDebugViewmodes() && ViewFamily.EngineShowFlags.Wireframe;
+
+	FColoredMaterialRenderProxy* WireframeMaterialInstance = nullptr;
+	if(bWireframe)
+	{
+		WireframeMaterialInstance = new FColoredMaterialRenderProxy(GEngine->WireframeMaterial ? GEngine->WireframeMaterial->GetRenderProxy() : nullptr,
+			FLinearColor(0.f,0.5f,1.f));
+		Collector.RegisterOneFrameMaterialProxy(WireframeMaterialInstance);
+	}
+
+	for(const auto& Section : Sections)
+	{
+		if(Section.IsValid() && Section->bVisible)
+		{
+			const FMaterialRenderProxy* MaterialProxy = bWireframe ? WireframeMaterialInstance : Section->Material->GetRenderProxy();
+			for(int i = 0 ;i < Views.Num();i++)
+			{
+				if(VisibilityMap & (1 << i))
+				{
+					auto View = Views[i];
+					auto& MeshBatch = Collector.AllocateMesh();
+					auto& BatchElement = MeshBatch.Elements[0];
+					BatchElement.IndexBuffer = &Section->IndexBuffer;
+
+					MeshBatch.bWireframe = bWireframe;
+					MeshBatch.VertexFactory = &Section->VertexFactory;
+					MeshBatch.MaterialRenderProxy = MaterialProxy;
+
+					bool bHasPreComputedVolumetricLightMap;
+					FMatrix PreviousLocalToWorld;
+					int32 SingleCaptureIndex;
+					bool bOutputVelocity;
+					GetScene().GetPrimitiveUniformShaderParameters_RenderThread(GetPrimitiveSceneInfo(),bHasPreComputedVolumetricLightMap,PreviousLocalToWorld,SingleCaptureIndex,bOutputVelocity);
+					auto& DynamicPrimitiveUniformBuffer = Collector.AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+					DynamicPrimitiveUniformBuffer.Set(GetLocalToWorld(),PreviousLocalToWorld,GetBounds(),GetLocalBounds(),
+						true,bHasPreComputedVolumetricLightMap,DrawsVelocity(),bOutputVelocity);
+					BatchElement.PrimitiveUniformBufferResource = &DynamicPrimitiveUniformBuffer.UniformBuffer;
+					BatchElement.PrimitiveIdMode = EPrimitiveIdMode::PrimID_DynamicPrimitiveShaderData;
+
+					//additional data
+					BatchElement.FirstIndex = 0;
+					BatchElement.NumPrimitives = Section->IndexBuffer.GetNumIndices() / 3;
+					BatchElement.MinVertexIndex = 0;
+					BatchElement.MaxVertexIndex = Section->MaxVertexIndex;
+
+					MeshBatch.ReverseCulling = IsLocalToWorldDeterminantNegative();
+					MeshBatch.Type = PT_TriangleList;
+					MeshBatch.DepthPriorityGroup = SDPG_World;
+					MeshBatch.bCanApplyViewModeOverrides = false;
+					
+					Collector.AddMesh(i,MeshBatch);
+				}
+			}
+		}
+	}
+}
+
+void FCustomMeshVertexFactoryShaderParameters::GetElementShaderBindings(const FSceneInterface* Scene,
+	const FSceneView* View, const FMeshMaterialShader* Shader, const EVertexInputStreamType InputStreamType,
+	ERHIFeatureLevel::Type FeatureLevel, const FVertexFactory* VertexFactory, const FMeshBatchElement& BatchElement,
+	FMeshDrawSingleShaderBindings& ShaderBindings, FVertexInputStreamArray& VertexStreams) const
+{
+	const FRHIUniformBuffer* VertexFactoryUniformBuffer = static_cast<FRHIUniformBuffer*>(BatchElement.VertexFactoryUserData);
+	const auto* LocalVertexFactory = static_cast<const FLocalVertexFactory*>(VertexFactory);
+	if(LocalVertexFactory->SupportsManualVertexFetch(FeatureLevel) || UseGPUScene(GMaxRHIShaderPlatform,FeatureLevel))
+	{
+		if(!VertexFactoryUniformBuffer)
+			VertexFactoryUniformBuffer = LocalVertexFactory->GetUniformBuffer();
+		ShaderBindings.Add(Shader->GetUniformBufferParameter<FLocalVertexFactoryUniformShaderParameters>(),VertexFactoryUniformBuffer);
+	}
+	if(BatchElement.bUserDataIsColorVertexBuffer)
+	{
+		auto OverrideColorVertextBuffer = static_cast<const FColorVertexBuffer*>(BatchElement.UserData);
+		check(OverrideColorVertextBuffer);
+
+		if(!LocalVertexFactory->SupportsManualVertexFetch(FeatureLevel))
+			LocalVertexFactory->GetColorOverrideStream(OverrideColorVertextBuffer,VertexStreams);
+	}
+	
+}
+
+
+IMPLEMENT_TYPE_LAYOUT(FCustomMeshVertexFactoryShaderParameters);
+
+IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FCustomMeshVertexFactory,SF_Vertex,FCustomMeshVertexFactoryShaderParameters);
+
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FCustomMeshVertexFactory, "/Shaders/CustomMeshVertexFactory.ush", true, true, true,
+								 true, true, true, true);
 
 #endif
