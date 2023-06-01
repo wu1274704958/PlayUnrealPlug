@@ -45,9 +45,13 @@ public:
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 	void UpdateLocalBounds();
+	//blueprint can call to create mesh section function
+	UFUNCTION(BlueprintCallable, Category = "MyMeshSection")
 	void CreateMeshSection(int32 Index,UStaticMesh *StaticMesh);
+	UFUNCTION(BlueprintCallable, Category = "MyMeshSection")
 	void ClearMeshSection(int32 Index);
 	void ClearAllMeshSections();
+	UFUNCTION(BlueprintCallable, Category = "MyMeshSection")
 	int32 GetNumMeshSections() const;
 	void SetMeshSectionVisibility(int32 Index, bool Visible);
 	bool IsMeshSectionVisible(int32 Index) const;
@@ -59,7 +63,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	FBoxSphereBounds LocalBounds;
-
+#if WITH_EDITOR
+	UPROPERTY(EditAnywhere)
+	bool bShowBounds;
+#endif 
 	friend class FCustomMeshSceneProxy;
 };
 

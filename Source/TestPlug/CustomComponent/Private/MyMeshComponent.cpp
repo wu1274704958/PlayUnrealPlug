@@ -3,6 +3,9 @@
 
 #include "MyMeshComponent.h"
 
+#include "DrawDebugHelpers.h"
+#include "Chaos/ChaosDebugDraw.h"
+
 FMyMeshSection::FMyMeshSection() : StaticMesh(nullptr), Bounds(FBox(FVector::ZeroVector, FVector::OneVector)), bVisible(false)
 {
 }
@@ -28,7 +31,10 @@ UMyMeshComponent::UMyMeshComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
+#if WITH_EDITOR
+	PrimaryComponentTick.bCanEverTick = true;
+#endif
+	
 	// ...
 }
 
@@ -47,7 +53,11 @@ void UMyMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+#if WITH_EDITOR
+	if(bShowBounds)
+		DrawDebugBox(GetWorld(), Bounds.Origin, Bounds.BoxExtent, FColor::Red, false, 0.f);
+#endif
+	
 }
 
 FBoxSphereBounds UMyMeshComponent::CalcBounds(const FTransform& LocalToWorld) const

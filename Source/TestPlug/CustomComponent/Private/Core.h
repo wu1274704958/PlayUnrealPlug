@@ -14,9 +14,7 @@ struct FCustomMeshVertexFactory : FLocalVertexFactory
 
 	FCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel)
 		: FLocalVertexFactory(InFeatureLevel, "FCustomMeshVertexFactory"),SceneProxy(nullptr)
-	{
-		bSupportsManualVertexFetch = false;
-	}
+	{}
 
 	virtual void InitRHI() override;
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters);
