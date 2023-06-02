@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "MyMeshComponent.h"
 
-
+DEFINE_LOG_CATEGORY(CustomMesh_Core)
 
 void FCustomMeshVertexFactory::InitRHI()
 {
@@ -99,6 +99,8 @@ FCustomMeshSceneProxy::~FCustomMeshSceneProxy()
 		Section->VertexFactory.ReleaseResource();
 		Section->IndexBuffer.ReleaseResource();
 	}
+	PreTransformsSB.SafeRelease();
+	PreTransformSRV.SafeRelease();
 	Sections.Reset();
 	PreTransforms.Reset();
 }
@@ -117,7 +119,10 @@ void FCustomMeshSceneProxy::SetSectionPreTransform_RenderThread(int SectionIndex
 	check(IsInRenderingThread());
 	if(SectionIndex < PreTransforms.Num())
 	{
-		PreTransforms[SectionIndex] = PreTransform;
+		PreTransforms[SectionIndex] = PreTransform.GetTransposed();
+#ifdef UE_EDITOR
+		UE_LOG(CustomMesh_Core,Warning,TEXT("SetSectionPreTransform %s"),*PreTransform.ToString());
+#endif
 	}
 }
 

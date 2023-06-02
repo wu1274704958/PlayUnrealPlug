@@ -90,7 +90,7 @@ float4 SplineParams[10];
 #endif
 	
 #if MY_CUSTOM_MESH_SECTION_TRANSFORM
-StructuredBuffer<float4x4> MyCustomMeshSectionTransformBuffer;
+StructuredBuffer<float4x4> MyCustomMeshSectionTransformBuffer  : register(t0);
 uint MyCustomMeshSectionTransformIndex;
 #endif
 
@@ -493,7 +493,12 @@ FMaterialPixelParameters GetMaterialPixelParameters(FVertexFactoryInterpolantsVS
 
 half3x3 CalcTangentToWorldNoScale(FVertexFactoryIntermediates Intermediates, half3x3 TangentToLocal)
 {
+#if MY_CUSTOM_MESH_SECTION_TRANSFORM
+	float4x4 mat = MyCustomMeshSectionTransformBuffer[MyCustomMeshSectionTransformIndex];
+	half3x3 LocalToWorld = mul((float3x3)mat,GetLocalToWorld3x3(Intermediates.PrimitiveId));
+#else
 	half3x3 LocalToWorld = GetLocalToWorld3x3(Intermediates.PrimitiveId);
+#endif
 	half3 InvScale = GetPrimitiveData(Intermediates.PrimitiveId).InvNonUniformScaleAndDeterminantSign.xyz;
 	LocalToWorld[0] *= InvScale.x;
 	LocalToWorld[1] *= InvScale.y;
@@ -679,6 +684,14 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	}
 #endif	// USE_SPLINEDEFORM
 
+#if MY_CUSTOM_MESH_SECTION_TRANSFORM
+float4 CustomMeshPreTransformTranslatedToLocal(float3 LocalPosition, uint PrimitiveId)
+{
+	float4x4 mat = MyCustomMeshSectionTransformBuffer[MyCustomMeshSectionTransformIndex];
+	return float4(mul(float4(LocalPosition,1.0f), mat).xyz,1);
+}
+#endif
+
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
 #else
@@ -686,7 +699,10 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
-	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
+#if MY_CUSTOM_MESH_SECTION_TRANSFORM
+	Position = CustomMeshPreTransformTranslatedToLocal(mul(Position, InstanceTransform).xyz, PrimitiveId);
+#endif
+	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -699,8 +715,8 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 	*/
 	return INVARIANT(TransformLocalToTranslatedWorld(float3(mul(Position, CalcSliceTransform(dot(Position.xyz, SplineMeshDir))).xyz), PrimitiveId));
 #elif MY_CUSTOM_MESH_SECTION_TRANSFORM
-	float4x4 mat = MyCustomMeshSectionTransformBuffer[MyCustomMeshSectionTransformIndex];
-	return TransformLocalToTranslatedWorld(mul(Position, mat).xyz, PrimitiveId);
+	Position = CustomMeshPreTransformTranslatedToLocal(Position, PrimitiveId);
+	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #else
 	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #endif

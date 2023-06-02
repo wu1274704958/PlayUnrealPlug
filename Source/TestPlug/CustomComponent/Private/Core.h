@@ -2,6 +2,8 @@
 #include "MeshMaterialShader.h"
 #include "MyMeshComponent.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(CustomMesh_Core,Warning,All);
+
 struct FCustomMeshVertexFactory;
 class FCustomMeshSceneProxy;
 class FCustomMeshVertexFactoryShaderParameters;
