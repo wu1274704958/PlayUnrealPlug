@@ -58,7 +58,7 @@ public:
 	virtual int32 GetNumMaterials() const override;
 
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	TArray<FMyMeshSection> Sections;
 
 	UPROPERTY(VisibleAnywhere)

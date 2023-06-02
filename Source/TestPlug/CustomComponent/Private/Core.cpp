@@ -30,7 +30,10 @@ void InitVertexFactoryData(FCustomMeshVertexFactory& VertexFactory,FStaticMeshVe
 			VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
 			VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(&VertexFactory, Data);
 			VertexBuffers.StaticMeshVertexBuffer.BindPackedTexCoordVertexBuffer(&VertexFactory, Data);
-			VertexBuffers.StaticMeshVertexBuffer.BindLightMapVertexBuffer(&VertexFactory, Data, LightMapCoordinateIndex);
+			LightMapCoordinateIndex = LightMapCoordinateIndex < (int32)VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() ?
+				LightMapCoordinateIndex : (int32)VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() - 1;
+			if(LightMapCoordinateIndex >= 0)
+				VertexBuffers.StaticMeshVertexBuffer.BindLightMapVertexBuffer(&VertexFactory, Data, LightMapCoordinateIndex);
 			VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(&VertexFactory, Data);
 
 			Data.LODLightmapDataIndex = 0;
