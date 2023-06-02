@@ -13,8 +13,10 @@ struct TESTPLUG_API FMyMeshSection
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UStaticMesh* StaticMesh;
+	UPROPERTY(EditAnywhere)
+	FTransform SectionTransform;
 	UPROPERTY()
 	FBox Bounds;
 	UPROPERTY(EditAnywhere)
@@ -56,7 +58,10 @@ public:
 	void SetMeshSectionVisibility(int32 Index, bool Visible);
 	bool IsMeshSectionVisible(int32 Index) const;
 	virtual int32 GetNumMaterials() const override;
-
+	UFUNCTION(BlueprintCallable, Category= "MyMeshSection")
+	void UpdateSectionPreTransform() const;
+	UFUNCTION(BlueprintCallable, Category="MyMeshSection")
+	void SetSectionPreTransform(int32 Index);
 private:
 	UPROPERTY(EditAnywhere)
 	TArray<FMyMeshSection> Sections;

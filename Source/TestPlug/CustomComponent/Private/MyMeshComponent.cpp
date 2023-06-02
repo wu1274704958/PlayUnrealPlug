@@ -82,7 +82,9 @@ void UMyMeshComponent::UpdateLocalBounds()
 	FBox LocalBox(ForceInit);
 
 	for (const FMyMeshSection& Section : Sections)
-		LocalBox += Section.Bounds;
+	{
+		LocalBox += Section.Bounds.TransformBy(Section.SectionTransform);
+	}
 
 	LocalBounds = LocalBox.IsValid ? FBoxSphereBounds(LocalBox) : FBoxSphereBounds(FVector::ZeroVector, FVector::OneVector,0.f);
 
@@ -100,6 +102,7 @@ void UMyMeshComponent::CreateMeshSection(int32 Index, UStaticMesh* StaticMesh)
 	Section.StaticMesh = StaticMesh;
 	Section.bVisible = true;
 	Section.StaticMesh->CalculateExtendedBounds();
+	Section.SectionTransform = FTransform::Identity;
 	Section.Bounds += Section.StaticMesh->GetBoundingBox();
 
 	SetMaterial(Index, Section.StaticMesh->GetMaterial(0));
@@ -157,4 +160,31 @@ bool UMyMeshComponent::IsMeshSectionVisible(int32 Index) const
 int32 UMyMeshComponent::GetNumMaterials() const
 {
 	return Sections.Num();
+}
+
+void UMyMeshComponent::UpdateSectionPreTransform() const
+{
+	auto Proxy = static_cast<FCustomMeshSceneProxy*>(SceneProxy);
+	ENQUEUE_RENDER_COMMAND(FMyMeshSection_UpdateSectionPreTransform)(
+		[Proxy](FRHICommandListImmediate& RHICmdList)
+		{
+			Proxy->UpdateSectionPreTransformRSV_RenderThread();
+		}
+	);
+}
+
+void UMyMeshComponent::SetSectionPreTransform(int32 Index)
+{
+	if(Index < Sections.Num())
+	{
+		auto Proxy = static_cast<FCustomMeshSceneProxy*>(SceneProxy);
+		FMatrix SectionPreTransform = Sections[Index].SectionTransform.ToMatrixWithScale();
+		ENQUEUE_RENDER_COMMAND(FMyMeshSection_SetSectionPreTransform)(
+			[Proxy, Index,SectionPreTransform](FRHICommandListImmediate& RHICmdList)
+			{
+				Proxy->SetSectionPreTransform_RenderThread(Index, SectionPreTransform);
+			}
+		);
+		UpdateLocalBounds();
+	}
 }

@@ -19,21 +19,19 @@ void FCustomMeshVertexFactory::ModifyCompilationEnvironment(const FVertexFactory
 	FShaderCompilerEnvironment& OutEnv)
 {
 	FLocalVertexFactory::ModifyCompilationEnvironment(Parameters,OutEnv);
+	OutEnv.SetDefine(TEXT("MY_CUSTOM_MESH_SECTION_TRANSFORM"), TEXT("1"));
 }
 
 void InitVertexFactoryData(FCustomMeshVertexFactory& VertexFactory,FStaticMeshVertexBuffers& VertexBuffers,int32_t LightMapCoordinateIndex)
 {
 	ENQUEUE_RENDER_COMMAND(StaticMeshVertexBuffersInit)(
-		[&](FRHICommandListImmediate& RHICmdList)
+		[&,LightMapCoordinateIndex](FRHICommandListImmediate& RHICmdList)
 		{
 			FLocalVertexFactory::FDataType Data;
 			VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
 			VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(&VertexFactory, Data);
 			VertexBuffers.StaticMeshVertexBuffer.BindPackedTexCoordVertexBuffer(&VertexFactory, Data);
-			LightMapCoordinateIndex = LightMapCoordinateIndex < (int32)VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() ?
-				LightMapCoordinateIndex : (int32)VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() - 1;
-			if(LightMapCoordinateIndex >= 0)
-				VertexBuffers.StaticMeshVertexBuffer.BindLightMapVertexBuffer(&VertexFactory, Data, LightMapCoordinateIndex);
+			VertexBuffers.StaticMeshVertexBuffer.BindLightMapVertexBuffer(&VertexFactory, Data, LightMapCoordinateIndex);
 			VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(&VertexFactory, Data);
 
 			Data.LODLightmapDataIndex = 0;
@@ -49,20 +47,37 @@ FCustomMeshSectionProxy::FCustomMeshSectionProxy(ERHIFeatureLevel::Type InFeatur
 	
 }
 
+void FCustomMeshSceneProxy::CreatePreSectionTransformSRV()
+{
+	FRHIResourceCreateInfo CreateInfo;
+	CreateInfo.ResourceArray = &PreTransforms;
+	CreateInfo.DebugName = TEXT("SectionPreTransformSRV");
+
+	PreTransformsSB = RHICreateStructuredBuffer(sizeof(FMatrix), PreTransforms.Num() * sizeof(FMatrix),BUF_ShaderResource,CreateInfo);
+	PreTransformSRV = RHICreateShaderResourceView(PreTransformsSB);
+}
+
 FCustomMeshSceneProxy::FCustomMeshSceneProxy(UMyMeshComponent* Component) : FPrimitiveSceneProxy(Component),
-                                                                            MaterialRelevance(Component->GetMaterialRelevance(GetScene().GetFeatureLevel()))
+	MaterialRelevance(Component->GetMaterialRelevance(GetScene().GetFeatureLevel())),
+	PreTransforms(true)
 {
 	Sections.AddDefaulted(Component->Sections.Num());
+	PreTransforms.AddDefaulted(Component->Sections.Num());
 	for(int i = 0;i < Component->Sections.Num();i++)
 	{
 		Sections[i] = CreateSectionProxy(i,Component->Sections[i],*Component);
+		PreTransforms[i] = Component->Sections[i].SectionTransform.ToMatrixWithScale();
 	}
+	if(PreTransforms.Num() > 0)
+		CreatePreSectionTransformSRV();
 }
 TSharedPtr<FCustomMeshSectionProxy> FCustomMeshSceneProxy::CreateSectionProxy(int SectionIndex,const FMyMeshSection& Section,const UMyMeshComponent& Component) const
 {
 	TSharedPtr<FCustomMeshSectionProxy> Proxy = MakeShared<FCustomMeshSectionProxy>(GetScene().GetFeatureLevel());
 	Proxy->bVisible = Section.bVisible;
 	Proxy->Material = Component.GetMaterial(SectionIndex);
+	Proxy->VertexFactory.SetSceneProxy(this);
+	Proxy->VertexFactory.SetSectionIndex(SectionIndex);
 	if(Proxy->Material == nullptr)
 		Proxy-> Material = UMaterial::GetDefaultMaterial(MD_Surface);
 	auto& LodResource = Section.StaticMesh->GetRenderData()->LODResources[0];
@@ -85,6 +100,7 @@ FCustomMeshSceneProxy::~FCustomMeshSceneProxy()
 		Section->IndexBuffer.ReleaseResource();
 	}
 	Sections.Reset();
+	PreTransforms.Reset();
 }
 
 void FCustomMeshSceneProxy::SetSectionVisibility_RenderThread(int SectionIndex, bool bVisible)
@@ -93,6 +109,26 @@ void FCustomMeshSceneProxy::SetSectionVisibility_RenderThread(int SectionIndex, 
 	if(SectionIndex < Sections.Num() && Sections[SectionIndex].IsValid())
 	{
 		Sections[SectionIndex]->bVisible = bVisible;
+	}
+}
+
+void FCustomMeshSceneProxy::SetSectionPreTransform_RenderThread(int SectionIndex, const FMatrix& PreTransform)
+{
+	check(IsInRenderingThread());
+	if(SectionIndex < PreTransforms.Num())
+	{
+		PreTransforms[SectionIndex] = PreTransform;
+	}
+}
+
+void FCustomMeshSceneProxy::UpdateSectionPreTransformRSV_RenderThread() const
+{
+	check(IsInRenderingThread());
+	if(PreTransformsSB)
+	{
+		void* Data = RHILockStructuredBuffer(PreTransformsSB,0,sizeof(FMatrix) * PreTransforms.Num(),RLM_WriteOnly);
+		FMemory::Memcpy(Data,PreTransforms.GetData(),sizeof(FMatrix) * PreTransforms.Num());
+		RHIUnlockStructuredBuffer(PreTransformsSB);
 	}
 }
 
@@ -176,13 +212,19 @@ void FCustomMeshSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView
 	}
 }
 
+void FCustomMeshVertexFactoryShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
+{
+	SectionPreTransformIndex.Bind(ParameterMap,TEXT("MyCustomMeshSectionTransformIndex"));
+	SectionPreTransformSRV.Bind(ParameterMap,TEXT("MyCustomMeshSectionTransformBuffer"));
+}
+
 void FCustomMeshVertexFactoryShaderParameters::GetElementShaderBindings(const FSceneInterface* Scene,
-	const FSceneView* View, const FMeshMaterialShader* Shader, const EVertexInputStreamType InputStreamType,
-	ERHIFeatureLevel::Type FeatureLevel, const FVertexFactory* VertexFactory, const FMeshBatchElement& BatchElement,
-	FMeshDrawSingleShaderBindings& ShaderBindings, FVertexInputStreamArray& VertexStreams) const
+                                                                        const FSceneView* View, const FMeshMaterialShader* Shader, const EVertexInputStreamType InputStreamType,
+                                                                        ERHIFeatureLevel::Type FeatureLevel, const FVertexFactory* VertexFactory, const FMeshBatchElement& BatchElement,
+                                                                        FMeshDrawSingleShaderBindings& ShaderBindings, FVertexInputStreamArray& VertexStreams) const
 {
 	const FRHIUniformBuffer* VertexFactoryUniformBuffer = static_cast<FRHIUniformBuffer*>(BatchElement.VertexFactoryUserData);
-	const auto* LocalVertexFactory = static_cast<const FLocalVertexFactory*>(VertexFactory);
+	const auto* LocalVertexFactory = static_cast<const FCustomMeshVertexFactory*>(VertexFactory);
 	if(LocalVertexFactory->SupportsManualVertexFetch(FeatureLevel) || UseGPUScene(GMaxRHIShaderPlatform,FeatureLevel))
 	{
 		if(!VertexFactoryUniformBuffer)
@@ -197,6 +239,9 @@ void FCustomMeshVertexFactoryShaderParameters::GetElementShaderBindings(const FS
 		if(!LocalVertexFactory->SupportsManualVertexFetch(FeatureLevel))
 			LocalVertexFactory->GetColorOverrideStream(OverrideColorVertextBuffer,VertexStreams);
 	}
+	const uint32 index = LocalVertexFactory->GetSectionIndex();
+	ShaderBindings.Add(SectionPreTransformIndex,index);
+	ShaderBindings.Add(SectionPreTransformSRV,LocalVertexFactory->GetSceneProxy()->GetPreTransformSRV());
 	
 }
 

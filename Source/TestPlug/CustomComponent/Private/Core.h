@@ -13,15 +13,19 @@ struct FCustomMeshVertexFactory : FLocalVertexFactory
 	DECLARE_VERTEX_FACTORY_TYPE(FCustomMeshVertexFactory);
 
 	FCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel)
-		: FLocalVertexFactory(InFeatureLevel, "FCustomMeshVertexFactory"),SceneProxy(nullptr)
+		: FLocalVertexFactory(InFeatureLevel, "FCustomMeshVertexFactory"), SceneProxy(nullptr), SectionIndex(0)
 	{}
 
 	virtual void InitRHI() override;
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters,FShaderCompilerEnvironment& OutEnv);
-	inline void	SetSceneProxy(FCustomMeshSceneProxy* Proxy) { SceneProxy = Proxy; }
+	void SetSceneProxy(const FCustomMeshSceneProxy* Proxy) { SceneProxy = Proxy; }
+	const FCustomMeshSceneProxy* GetSceneProxy() const { return SceneProxy; }
+	uint32 GetSectionIndex() const{return SectionIndex;}
+	void SetSectionIndex(const uint32 _SectionIndex){this->SectionIndex = _SectionIndex;}
 private:
-	FCustomMeshSceneProxy* SceneProxy;
+	const FCustomMeshSceneProxy* SceneProxy;
+	uint32 SectionIndex;
 	friend class FCustomMeshVertexFactoryShaderParameters;
 };
 
@@ -46,11 +50,14 @@ public:
 	}
 
 	TSharedPtr<FCustomMeshSectionProxy> CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const;
+	const FShaderResourceViewRHIRef& GetPreTransformSRV() const { return PreTransformSRV; }
+	void CreatePreSectionTransformSRV();
 	FCustomMeshSceneProxy(UMyMeshComponent* Component);
 	virtual ~FCustomMeshSceneProxy() override;
 
 	void SetSectionVisibility_RenderThread(int SectionIndex,bool bVisible);
-
+	void SetSectionPreTransform_RenderThread(int SectionIndex,const FMatrix& PreTransform);
+	void UpdateSectionPreTransformRSV_RenderThread() const;
 	virtual uint32 GetMemoryFootprint( void ) const override { return( sizeof( *this ) + GetAllocatedSize() ); }
 	uint32 GetAllocatedSize( void ) const { return( FPrimitiveSceneProxy::GetAllocatedSize() + Sections.GetAllocatedSize() ); }
 	virtual bool CanBeOccluded() const override;
@@ -61,13 +68,16 @@ public:
 private:
 	FMaterialRelevance MaterialRelevance;
 	TArray<TSharedPtr<FCustomMeshSectionProxy>> Sections;
+	TResourceArray<FMatrix> PreTransforms;
+	FStructuredBufferRHIRef PreTransformsSB;
+	FShaderResourceViewRHIRef PreTransformSRV;
 };
 
 class FCustomMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
 {
 	DECLARE_TYPE_LAYOUT(FCustomMeshVertexFactoryShaderParameters, NonVirtual);
 public:
-	void Bind(const FShaderParameterMap& ParameterMap){}
+	void Bind(const FShaderParameterMap& ParameterMap);
 	void GetElementShaderBindings(
 		const class FSceneInterface* Scene,
 		const FSceneView* View,
@@ -78,4 +88,7 @@ public:
 		const FMeshBatchElement& BatchElement,
 		class FMeshDrawSingleShaderBindings& ShaderBindings,
 		FVertexInputStreamArray& VertexStreams) const;
+
+	LAYOUT_FIELD(FShaderResourceParameter,SectionPreTransformSRV);
+	LAYOUT_FIELD(FShaderParameter,SectionPreTransformIndex);
 };

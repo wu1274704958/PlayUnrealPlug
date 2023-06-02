@@ -84,6 +84,17 @@ float4 SplineParams[10];
 
 #endif //! MANUAL_VERTEX_FETCH
 
+//! My custom mesh section transform
+#ifndef MY_CUSTOM_MESH_SECTION_TRANSFORM
+#define MY_CUSTOM_MESH_SECTION_TRANSFORM 0
+#endif
+	
+#if MY_CUSTOM_MESH_SECTION_TRANSFORM
+StructuredBuffer<float4x4> MyCustomMeshSectionTransformBuffer;
+uint MyCustomMeshSectionTransformIndex;
+#endif
+
+
 /**
  * Per-vertex inputs from bound vertex buffers
  */
@@ -687,6 +698,9 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 	return TransformLocalToTranslatedWorld(LocalPos.xyz);
 	*/
 	return INVARIANT(TransformLocalToTranslatedWorld(float3(mul(Position, CalcSliceTransform(dot(Position.xyz, SplineMeshDir))).xyz), PrimitiveId));
+#elif MY_CUSTOM_MESH_SECTION_TRANSFORM
+	float4x4 mat = MyCustomMeshSectionTransformBuffer[MyCustomMeshSectionTransformIndex];
+	return TransformLocalToTranslatedWorld(mul(Position, mat).xyz, PrimitiveId);
 #else
 	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #endif
