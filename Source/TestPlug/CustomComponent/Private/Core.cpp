@@ -66,7 +66,7 @@ FCustomMeshSceneProxy::FCustomMeshSceneProxy(UMyMeshComponent* Component) : FPri
 	for(int i = 0;i < Component->Sections.Num();i++)
 	{
 		Sections[i] = CreateSectionProxy(i,Component->Sections[i],*Component);
-		PreTransforms[i] = Component->Sections[i].SectionTransform.ToMatrixWithScale();
+		PreTransforms[i] = Component->Sections[i].SectionTransform.ToMatrixWithScale().GetTransposed();
 	}
 	if(PreTransforms.Num() > 0)
 		CreatePreSectionTransformSRV();
