@@ -20,9 +20,10 @@ public:
 	void DrawFootPrint();
 protected:
 	void CreateMaterialInstance();
-	void CreateRenderTarget(const TCHAR* Name,UTextureRenderTarget2D* RenderTarget);
+	void CreateRenderTarget(const TCHAR* Name,UTextureRenderTarget2D*& RenderTarget);
 	FVector4 CalcCurrentDrawOffset() const;
 	void CopyAndMoveRenderTarget(FVector2D Offset) const;
+	float CalcFootPrintRotation() const;
 	void DrawFootPrintReal() const;
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -34,7 +35,7 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "FootPrint")
-	FVector2D M_RenderTargetSize;
+	FVector2D M_RenderTargetSize = FVector2D(1024.f,1024.f);
 	UPROPERTY(VisibleAnywhere, Category = "FootPrint")
 	FVector M_LastPosition = FVector::ZeroVector;
 	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
@@ -43,14 +44,18 @@ protected:
 	UTextureRenderTarget2D* M_RenderTargetCopy;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	FVector4 M_DrawFootPrintOffsetAndSize;
-	UPROPERTY(EditAnywhere,Category="FootPrint")
-	UMaterial *M_DrawPrintMaterial;
-	UPROPERTY(VisibleAnywhere,Category="FootPrint")
-	UMaterialInstanceDynamic *M_DrawPrintMaterialInstance;
+	// UPROPERTY(EditAnywhere,Category="FootPrint")
+	// UMaterial *M_DrawPrintMaterial;
+	// UPROPERTY(VisibleAnywhere,Category="FootPrint")
+	// UMaterialInstanceDynamic *M_DrawPrintMaterialInstance;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	UTexture2D *M_DrawPrintTexture;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	UMaterial *M_CopyMaterial;
 	UPROPERTY(VisibleAnywhere,Category="FootPrint")
 	UMaterialInstanceDynamic *M_CopyMaterialInstance;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	FVector2D PivotPointOffset = FVector2D(0.f,0.f);
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	float RotateOffset = 0.f;
 };
