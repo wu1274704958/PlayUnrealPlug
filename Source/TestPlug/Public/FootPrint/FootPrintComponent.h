@@ -38,7 +38,7 @@ protected:
 	FVector2D M_RenderTargetSize = FVector2D(1024.f,1024.f);
 	UPROPERTY(VisibleAnywhere, Category = "FootPrint")
 	FVector M_LastPosition = FVector::ZeroVector;
-	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
+	UPROPERTY(EditAnywhere,Category= "FootPrint")
 	UTextureRenderTarget2D* M_RenderTarget;
 	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
 	UTextureRenderTarget2D* M_RenderTargetCopy;
