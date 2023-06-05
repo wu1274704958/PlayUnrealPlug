@@ -94,7 +94,8 @@ void UFootPrintComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	M_LastPosition = this->GetComponentLocation();
-	CreateRenderTarget(TEXT("FootPrintRenderTarget"),M_RenderTarget);
+	if(M_RenderTarget == nullptr)
+		CreateRenderTarget(TEXT("FootPrintRenderTarget"),M_RenderTarget);
 	CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
 	CreateMaterialInstance();
 	DrawFootPrint();
