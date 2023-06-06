@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FootPrintRenderTargetComponent.h"
 #include "Components/ActorComponent.h"
 #include "Engine/TextureRenderTarget.h"
 #include "FootPrintComponent.generated.h"
 
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(ClassGroup=(FootPrint), meta=(BlueprintSpawnableComponent))
 class TESTPLUG_API UFootPrintComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -20,11 +21,9 @@ public:
 	void DrawFootPrint();
 protected:
 	void CreateMaterialInstance();
-	void CreateRenderTarget(const TCHAR* Name,UTextureRenderTarget2D*& RenderTarget);
-	FVector4 CalcCurrentDrawOffset() const;
-	void CopyAndMoveRenderTarget(FVector2D Offset) const;
 	float CalcFootPrintRotation() const;
 	void DrawFootPrintReal() const;
+	void FindFootPrintTargetComponent();
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -34,20 +33,10 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "FootPrint")
-	FVector2D M_RenderTargetSize = FVector2D(1024.f,1024.f);
-	UPROPERTY(VisibleAnywhere, Category = "FootPrint")
-	FVector M_LastPosition = FVector::ZeroVector;
-	UPROPERTY(EditAnywhere,Category= "FootPrint")
-	UTextureRenderTarget2D* M_RenderTarget;
-	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
-	UTextureRenderTarget2D* M_RenderTargetCopy;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	FVector4 M_DrawFootPrintOffsetAndSize;
-	// UPROPERTY(EditAnywhere,Category="FootPrint")
-	// UMaterial *M_DrawPrintMaterial;
-	// UPROPERTY(VisibleAnywhere,Category="FootPrint")
-	// UMaterialInstanceDynamic *M_DrawPrintMaterialInstance;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	UFootPrintRenderTargetComponent* M_RenderTargetComponent;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	UTexture2D *M_DrawPrintTexture;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
