@@ -20,6 +20,17 @@ UFootPrintRenderTargetComponent::UFootPrintRenderTargetComponent()
 	// ...
 }
 
+void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* rt)
+{
+	if(rt != nullptr)
+	{
+		FCanvas Canvas(rt->GameThread_GetRenderTargetResource(), NULL,FApp::GetCurrentTime() - GStartTime,
+			FApp::GetDeltaTime(), FApp::GetCurrentTime() - GStartTime, GMaxRHIFeatureLevel);
+		Canvas.Clear(FLinearColor::Transparent);
+		Canvas.Flush_GameThread();
+	}
+}
+
 void UFootPrintRenderTargetComponent::CheckInitialization()
 {
 	UpdateMaterialParameters(M_CopyMaterialInstance != nullptr);
@@ -27,8 +38,12 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 		CreateMaterialInstance();
 	if(M_RenderTarget == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTarget"),M_RenderTarget);
+	else if(M_RenderTarget->SizeX != M_RenderTargetSize.X || M_RenderTarget->SizeY != M_RenderTargetSize.Y)
+		M_RenderTarget->ResizeTarget(M_RenderTargetSize.X,M_RenderTargetSize.Y);
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
+	if(M_RenderTarget)
+	ClearRenderTarget(M_RenderTarget);
 }
 
 void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosition) const
@@ -77,7 +92,7 @@ void UFootPrintRenderTargetComponent::TickComponent(float DeltaTime, ELevelTick 
 
 FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos) const
 {
-	const auto Res = pos - GetLastPosition();
+	const auto Res = GetLastPosition() - pos;
 	return FVector4(Res.X / M_RenderTargetSize.X,Res.Y / M_RenderTargetSize.Y,Res.Z,0.0f);
 }
 

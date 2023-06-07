@@ -15,6 +15,7 @@ class TESTPLUG_API UFootPrintRenderTargetComponent : public USceneComponent
 public:
 	// Sets default values for this component's properties
 	UFootPrintRenderTargetComponent();
+	static void ClearRenderTarget(UTextureRenderTarget2D* rt);
 	void CheckInitialization();
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
 	void UpdateMaterialParameters(bool OnlySetPosition = true) const;
