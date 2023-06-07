@@ -20,12 +20,11 @@ UFootPrintRenderTargetComponent::UFootPrintRenderTargetComponent()
 	// ...
 }
 
-void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* rt)
+void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* rt) const
 {
 	if(rt != nullptr)
 	{
-		FCanvas Canvas(rt->GameThread_GetRenderTargetResource(), NULL,FApp::GetCurrentTime() - GStartTime,
-			FApp::GetDeltaTime(), FApp::GetCurrentTime() - GStartTime, GMaxRHIFeatureLevel);
+		FCanvas Canvas(rt->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 		Canvas.Clear(FLinearColor::Transparent);
 		Canvas.Flush_GameThread();
 	}
@@ -93,7 +92,7 @@ void UFootPrintRenderTargetComponent::TickComponent(float DeltaTime, ELevelTick 
 FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos) const
 {
 	const auto Res = GetLastPosition() - pos;
-	return FVector4(Res.X / M_RenderTargetSize.X,Res.Y / M_RenderTargetSize.Y,Res.Z,0.0f);
+	return FVector4(floor(Res.X) / M_RenderTargetSize.X,floor(Res.Y) / M_RenderTargetSize.Y,Res.Z,0.0f);
 }
 
 void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) const
@@ -101,8 +100,7 @@ void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) 
 	check(M_CopyMaterialInstance && M_RenderTarget && M_RenderTargetCopy);
 	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTarget);
 	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(Offset.X,Offset.Y,0.0f,0.0f));
-	FCanvas Canvas(M_RenderTargetCopy->GameThread_GetRenderTargetResource(), NULL,FApp::GetCurrentTime() - GStartTime,
-		FApp::GetDeltaTime(), FApp::GetCurrentTime() - GStartTime, GMaxRHIFeatureLevel);
+	FCanvas Canvas(M_RenderTargetCopy->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 	Canvas.Clear(FLinearColor::Transparent);
 	FCanvasTileItem TileItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), FVector2D(M_RenderTargetSize.X,M_RenderTargetSize.Y));
 	Canvas.DrawItem(TileItem);

@@ -37,11 +37,10 @@ void UFootPrintComponent::DrawFootPrintReal() const
 	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTargetComponent->RenderTargetCopy());
 	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(0,0,0.0f,0.0f));
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
-	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), NULL,FApp::GetCurrentTime() - GStartTime,
-		FApp::GetDeltaTime(), FApp::GetCurrentTime() - GStartTime, GMaxRHIFeatureLevel);
+	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 	Canvas.Clear(FLinearColor::Transparent);
-	FCanvasTileItem LastItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), FVector2D(RenderTargetSize.X,RenderTargetSize.Y));
-	FCanvasTileItem TileItem(FVector2D(RenderTargetSize.X,RenderTargetSize.Y) * 0.5f - PrintSize * 0.5f
+	FCanvasTileItem LastItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), RenderTargetSize);
+	FCanvasTileItem TileItem(RenderTargetSize * 0.5f - PrintSize * 0.5f
 		 + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),
 		M_DrawPrintTexture->GetResource(),PrintSize,FLinearColor::White);
 	TileItem.Rotation = FRotator(0,CalcFootPrintRotation() + RotateOffset,0.0f);
