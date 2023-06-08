@@ -71,8 +71,10 @@ void UFootPrintComponent::DrawFootPrint()
 {
 	check(M_RenderTargetComponent && M_DrawPrintTexture);
 	OnDrawFootPrint();
-	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation()));
-	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
+	FVector newPosition; 
+	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
+	UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
+	M_RenderTargetComponent->SetLastPosition(newPosition);
 	M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
 	DrawFootPrintReal();
 	M_RenderTargetComponent->UpdateMaterialParameters();

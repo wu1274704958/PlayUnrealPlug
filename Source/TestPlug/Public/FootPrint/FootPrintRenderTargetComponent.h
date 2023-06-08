@@ -30,8 +30,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
-	UFUNCTION(BlueprintCallable, Category = "FootPrint")
-	FVector4 CalcCurrentDrawOffset(FVector pos) const;
+	
+	FVector4 CalcCurrentDrawOffset(FVector pos,FVector& newPos) const;
 	UFUNCTION(BlueprintCallable, Category="FootPrint")
 	void CopyAndMoveRenderTarget(FVector2D Offset) const;
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")

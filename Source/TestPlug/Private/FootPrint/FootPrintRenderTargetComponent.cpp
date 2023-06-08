@@ -6,6 +6,7 @@
 #include "CanvasItem.h"
 #include "CanvasTypes.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "FootPrint/FootPrintComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 
@@ -90,10 +91,17 @@ void UFootPrintRenderTargetComponent::TickComponent(float DeltaTime, ELevelTick 
 	// ...
 }
 
-FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos) const
+inline float mFloor(float v)
 {
-	const auto Res = GetLastPosition() - pos;
-	return FVector4(floor(Res.X) / M_RenderTargetSize.X,floor(Res.Y) / M_RenderTargetSize.Y,Res.Z,0.0f);
+	return v > 0.0f ? floor(v) : ceil(v);	
+}
+
+FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos,FVector& newPos) const
+{
+	const auto last = GetLastPosition();
+	const auto Res = pos - last;
+	newPos = pos;
+	return FVector4(mFloor(-Res.X) / M_RenderTargetSize.X,mFloor(-Res.Y) / M_RenderTargetSize.Y,-Res.Z,0.0f);
 }
 
 void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) const
