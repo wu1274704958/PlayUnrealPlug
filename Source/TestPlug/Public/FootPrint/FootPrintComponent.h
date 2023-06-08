@@ -51,6 +51,10 @@ protected:
 	UPROPERTY(VisibleAnywhere,Category="FootPrint")
 	UMaterialInstanceDynamic *M_CopyMaterialInstance;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
+	UMaterial *M_DrawMaterial;
+	UPROPERTY(VisibleAnywhere,Category="FootPrint")
+	UMaterialInstanceDynamic *M_DrawMaterialInstance;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
 	FVector2D PivotPointOffset = FVector2D(0.f,0.f);
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float RotateOffset = 0.f;

@@ -25,6 +25,8 @@ void UFootPrintComponent::CreateMaterialInstance()
 {
 	if(M_CopyMaterial != nullptr)
 		M_CopyMaterialInstance = UMaterialInstanceDynamic::Create(M_CopyMaterial, this);
+	if(M_DrawMaterial != nullptr)
+		M_DrawMaterialInstance = UMaterialInstanceDynamic::Create(M_DrawMaterial,this);
 }
 
 float UFootPrintComponent::CalcFootPrintRotation() const
@@ -38,13 +40,14 @@ void UFootPrintComponent::DrawFootPrintReal() const
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
 	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTargetComponent->RenderTargetCopy());
 	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(0,0,0.0f,0.0f));
+	M_DrawMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
 	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 	Canvas.Clear(FLinearColor::Transparent);
 	FCanvasTileItem LastItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), RenderTargetSize);
 	FCanvasTileItem TileItem(RenderTargetSize * 0.5f - PrintSize * 0.5f
 		 + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),
-		M_DrawPrintTexture->GetResource(),PrintSize * FootPrintScale,FLinearColor::White);
+		M_DrawMaterialInstance->GetRenderProxy(),PrintSize * FootPrintScale);
 	TileItem.Rotation = FRotator(0,CalcFootPrintRotation() + RotateOffset,0.0f);
 	TileItem.PivotPoint = FVector2D(0.5f,0.5f) + PivotPointOffset;
 	Canvas.DrawItem(LastItem);
@@ -69,7 +72,7 @@ void UFootPrintComponent::FindFootPrintTargetComponent()
 
 void UFootPrintComponent::DrawFootPrint()
 {
-	check(M_RenderTargetComponent && M_DrawPrintTexture);
+	check(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance);
 	OnDrawFootPrint();
 	FVector newPosition; 
 	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
