@@ -8,6 +8,9 @@
 #include "Engine/TextureRenderTarget.h"
 #include "FootPrintComponent.generated.h"
 
+//define ue log FootPrint
+DECLARE_LOG_CATEGORY_EXTERN(W_FootPrint,Warning,All);
+
 
 UCLASS(ClassGroup=(FootPrint), meta=(BlueprintSpawnableComponent))
 class TESTPLUG_API UFootPrintComponent : public USceneComponent
@@ -26,6 +29,10 @@ protected:
 	void FindFootPrintTargetComponent();
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual FVector GetFootPrintLocation() const;
+	virtual FRotator GetFootPrintRotation() const;
+	virtual FVector GetFootPrintScale() const;
+	virtual void OnDrawFootPrint();
 
 public:
 	// Called every frame

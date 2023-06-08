@@ -41,7 +41,8 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 		M_RenderTarget->ResizeTarget(M_RenderTargetSize.X,M_RenderTargetSize.Y);
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
-	if(M_RenderTarget)
+	M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
+	M_RenderTarget->Filter = TextureFilter::TF_Nearest;
 	ClearRenderTarget(M_RenderTarget);
 }
 

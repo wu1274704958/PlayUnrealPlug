@@ -9,6 +9,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/GameplayStatics.h"
 
+DEFINE_LOG_CATEGORY(W_FootPrint);
 
 // Sets default values for this component's properties
 UFootPrintComponent::UFootPrintComponent()
@@ -28,12 +29,13 @@ void UFootPrintComponent::CreateMaterialInstance()
 
 float UFootPrintComponent::CalcFootPrintRotation() const
 {
-	return GetComponentRotation().Yaw;
+	return GetFootPrintRotation().Yaw;
 }
 
 void UFootPrintComponent::DrawFootPrintReal() const
 {
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
+	const auto FootPrintScale = FVector2D(GetFootPrintScale());
 	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTargetComponent->RenderTargetCopy());
 	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(0,0,0.0f,0.0f));
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
@@ -42,7 +44,7 @@ void UFootPrintComponent::DrawFootPrintReal() const
 	FCanvasTileItem LastItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), RenderTargetSize);
 	FCanvasTileItem TileItem(RenderTargetSize * 0.5f - PrintSize * 0.5f
 		 + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),
-		M_DrawPrintTexture->GetResource(),PrintSize,FLinearColor::White);
+		M_DrawPrintTexture->GetResource(),PrintSize * FootPrintScale,FLinearColor::White);
 	TileItem.Rotation = FRotator(0,CalcFootPrintRotation() + RotateOffset,0.0f);
 	TileItem.PivotPoint = FVector2D(0.5f,0.5f) + PivotPointOffset;
 	Canvas.DrawItem(LastItem);
@@ -68,9 +70,9 @@ void UFootPrintComponent::FindFootPrintTargetComponent()
 void UFootPrintComponent::DrawFootPrint()
 {
 	check(M_RenderTargetComponent && M_DrawPrintTexture);
-	
-	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetComponentLocation()));
-	M_RenderTargetComponent->SetLastPosition(this->GetComponentLocation());
+	OnDrawFootPrint();
+	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation()));
+	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
 	DrawFootPrintReal();
 	M_RenderTargetComponent->UpdateMaterialParameters();
@@ -84,10 +86,29 @@ void UFootPrintComponent::BeginPlay()
 	if(M_RenderTargetComponent == nullptr)
 		FindFootPrintTargetComponent();
 	M_RenderTargetComponent->CheckInitialization();
-	M_RenderTargetComponent->SetLastPosition(this->GetComponentLocation());
+	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	CreateMaterialInstance();
 	DrawFootPrint();
 	// ...
+}
+
+FVector UFootPrintComponent::GetFootPrintLocation() const
+{
+	return GetComponentLocation();
+}
+
+FRotator UFootPrintComponent::GetFootPrintRotation() const
+{
+	return GetComponentRotation();
+}
+
+FVector UFootPrintComponent::GetFootPrintScale() const
+{
+	return FVector::OneVector;
+}
+
+void UFootPrintComponent::OnDrawFootPrint()
+{
 }
 
 
