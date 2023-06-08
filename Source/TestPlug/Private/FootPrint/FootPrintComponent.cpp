@@ -16,8 +16,9 @@ UFootPrintComponent::UFootPrintComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
+#if WITH_EDITOR
 	PrimaryComponentTick.bCanEverTick = true;
-	
+#endif
 	// ...
 }
 
@@ -34,7 +35,7 @@ float UFootPrintComponent::CalcFootPrintRotation() const
 	return GetFootPrintRotation().Yaw;
 }
 
-void UFootPrintComponent::DrawFootPrintReal() const
+void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 {
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
@@ -50,7 +51,7 @@ void UFootPrintComponent::DrawFootPrintReal() const
 		M_DrawMaterialInstance->GetRenderProxy(),PrintSize * FootPrintScale);
 	TileItem.Rotation = FRotator(0,CalcFootPrintRotation() + RotateOffset,0.0f);
 	TileItem.PivotPoint = FVector2D(0.5f,0.5f) + PivotPointOffset;
-	Canvas.DrawItem(LastItem);
+	if(bDrawLast)Canvas.DrawItem(LastItem);
 	Canvas.DrawItem(TileItem);
 	Canvas.Flush_GameThread();
 }
@@ -70,16 +71,16 @@ void UFootPrintComponent::FindFootPrintTargetComponent()
 	}
 }
 
-void UFootPrintComponent::DrawFootPrint()
+void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 {
 	check(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance);
 	OnDrawFootPrint();
 	FVector newPosition; 
 	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
-	UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
+	//UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
 	M_RenderTargetComponent->SetLastPosition(newPosition);
 	M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
-	DrawFootPrintReal();
+	DrawFootPrintReal(bDrawLast);
 	M_RenderTargetComponent->UpdateMaterialParameters();
 }
 
@@ -123,5 +124,17 @@ void UFootPrintComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	// ...
+#if WITH_EDITOR
+	if(bAdjustFootPrint)
+	{
+		const auto PlayerController = GetWorld()->GetFirstPlayerController();
+		if (PlayerController && PlayerController->IsInputKeyDown(EKeys::T))
+		{
+			DrawFootPrint(false);
+		}
+	}
+	
+#endif
+	
 }
 

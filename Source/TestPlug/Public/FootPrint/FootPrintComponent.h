@@ -21,11 +21,11 @@ public:
 	// Sets default values for this component's properties
 	UFootPrintComponent();
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
-	void DrawFootPrint();
+	void DrawFootPrint(bool bDrawLast = true);
 protected:
 	void CreateMaterialInstance();
 	float CalcFootPrintRotation() const;
-	void DrawFootPrintReal() const;
+	void DrawFootPrintReal(bool bDrawLast = true) const;
 	void FindFootPrintTargetComponent();
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -58,4 +58,8 @@ protected:
 	FVector2D PivotPointOffset = FVector2D(0.f,0.f);
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float RotateOffset = 0.f;
+#if WITH_EDITOR
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	bool bAdjustFootPrint = false;
+#endif
 };
