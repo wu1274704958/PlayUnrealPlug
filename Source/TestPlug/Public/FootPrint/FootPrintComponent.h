@@ -59,7 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float RotateOffset = 0.f;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
-	bool BeginPlayDraw = true;
+	bool bBeginPlayDraw = true;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	bool bCheckInTargetRegion = false;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bAdjustFootPrint = false;

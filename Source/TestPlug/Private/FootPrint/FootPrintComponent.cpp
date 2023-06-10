@@ -45,7 +45,7 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
 	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 	Canvas.Clear(FLinearColor::Transparent);
-	FCanvasTileItem LastItem(FVector2D(),M_CopyMaterialInstance->GetRenderProxy(), RenderTargetSize);
+	FCanvasTileItem LastItem(FVector2D(0.0f,0.0f),M_CopyMaterialInstance->GetRenderProxy(), RenderTargetSize);
 	FCanvasTileItem TileItem(RenderTargetSize * 0.5f - PrintSize * 0.5f
 		 + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),
 		M_DrawMaterialInstance->GetRenderProxy(),PrintSize * FootPrintScale);
@@ -76,9 +76,11 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 	if(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance)
 	{
 		OnDrawFootPrint();
+		if(bCheckInTargetRegion && !M_RenderTargetComponent->IsInRegion(GetFootPrintLocation()))
+			return;
 		FVector newPosition; 
 		const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
-		//UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
+		UE_LOG(W_FootPrint, Warning, TEXT("%s draw foot print Offset: %s"), *GetName(),*Offset.ToString());
 		M_RenderTargetComponent->SetLastPosition(newPosition);
 		M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
 		DrawFootPrintReal(bDrawLast);
@@ -96,7 +98,7 @@ void UFootPrintComponent::BeginPlay()
 	M_RenderTargetComponent->CheckInitialization();
 	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	CreateMaterialInstance();
-	if(BeginPlayDraw)DrawFootPrint();
+	if(bBeginPlayDraw)DrawFootPrint();
 	// ...
 }
 

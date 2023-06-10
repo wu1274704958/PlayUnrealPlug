@@ -18,7 +18,9 @@ public:
 	void ClearRenderTarget(UTextureRenderTarget2D* rt) const;
 	void CheckInitialization();
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
-	void UpdateMaterialParameters(bool OnlySetPosition = true) const;
+	void UpdateMaterialParameters(bool OnlySetPosition = true);
+	UFUNCTION(BlueprintCallable, Category = "FootPrint")
+	bool IsInRegion(FVector pos) const;
 
 protected:
 	// Called when the game starts
@@ -81,4 +83,12 @@ protected:
 	UMaterialParameterCollection *M_MaterialParameterCollection;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	uint32 M_MaterialParameterCollectionIndex = 0;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	FBoxSphereBounds M_RegionBounds;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	float M_RegionZOffset = 0.0f;
+#if WITH_EDITOR
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	bool bDrawRegion = false;
+#endif
 };
