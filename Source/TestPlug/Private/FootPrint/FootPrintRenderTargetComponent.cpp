@@ -100,8 +100,8 @@ FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos,FVec
 {
 	const auto last = GetLastPosition();
 	const auto Res = pos - last;
-	newPos = pos;
-	return FVector4(mFloor(-Res.X) / M_RenderTargetSize.X,mFloor(-Res.Y) / M_RenderTargetSize.Y,-Res.Z,0.0f);
+	newPos = last + FVector(mFloor(Res.X),mFloor(Res.Y),Res.Y);
+	return FVector4(mFloor(-Res.X) / M_RenderTargetSize.X,mFloor(-Res.Y) / M_RenderTargetSize.Y,Res.Z,0.0f);
 }
 
 void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) const

@@ -58,6 +58,8 @@ protected:
 	FVector2D PivotPointOffset = FVector2D(0.f,0.f);
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float RotateOffset = 0.f;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	bool BeginPlayDraw = true;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bAdjustFootPrint = false;

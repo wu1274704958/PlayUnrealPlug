@@ -73,15 +73,17 @@ void UFootPrintComponent::FindFootPrintTargetComponent()
 
 void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 {
-	check(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance);
-	OnDrawFootPrint();
-	FVector newPosition; 
-	const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
-	//UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
-	M_RenderTargetComponent->SetLastPosition(newPosition);
-	M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
-	DrawFootPrintReal(bDrawLast);
-	M_RenderTargetComponent->UpdateMaterialParameters();
+	if(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance)
+	{
+		OnDrawFootPrint();
+		FVector newPosition; 
+		const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
+		//UE_LOG(W_FootPrint, Warning, TEXT("Offset: %s"), *Offset.ToString());
+		M_RenderTargetComponent->SetLastPosition(newPosition);
+		M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
+		DrawFootPrintReal(bDrawLast);
+		M_RenderTargetComponent->UpdateMaterialParameters();
+	}
 }
 
 
@@ -94,7 +96,7 @@ void UFootPrintComponent::BeginPlay()
 	M_RenderTargetComponent->CheckInitialization();
 	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	CreateMaterialInstance();
-	DrawFootPrint();
+	if(BeginPlayDraw)DrawFootPrint();
 	// ...
 }
 
@@ -127,8 +129,8 @@ void UFootPrintComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 #if WITH_EDITOR
 	if(bAdjustFootPrint)
 	{
-		const auto PlayerController = GetWorld()->GetFirstPlayerController();
-		if (PlayerController && PlayerController->IsInputKeyDown(EKeys::T))
+		// const auto PlayerController = GetWorld()->GetFirstPlayerController();
+		// if (PlayerController && PlayerController->IsInputKeyDown(EKeys::T))
 		{
 			DrawFootPrint(false);
 		}
