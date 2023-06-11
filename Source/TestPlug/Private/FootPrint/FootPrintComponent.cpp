@@ -5,7 +5,6 @@
 
 
 #include "CanvasItem.h"
-#include "RendererInterface.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -56,6 +55,23 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 	Canvas.Flush_GameThread();
 }
 
+void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos) const
+{
+	M_DrawMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
+	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
+	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
+	const auto FootPrintScale = FVector2D(GetFootPrintScale());
+	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
+
+	FCanvasTileItem TileItem(RenderTargetSize * 0.5f - PrintSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y) + pos,
+		M_DrawMaterialInstance->GetRenderProxy(),PrintSize * FootPrintScale);
+	TileItem.Rotation = FRotator(0,CalcFootPrintRotation() + RotateOffset,0.0f);
+	TileItem.PivotPoint = FVector2D(0.5f,0.5f) + PivotPointOffset;
+	
+	Canvas.DrawItem(TileItem);
+	Canvas.Flush_GameThread();
+}
+
 void UFootPrintComponent::FindFootPrintTargetComponent()
 {
 	TArray<AActor*> Actors;
@@ -76,15 +92,24 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 	if(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance)
 	{
 		OnDrawFootPrint();
-		if(bCheckInTargetRegion && !M_RenderTargetComponent->IsInRegion(GetFootPrintLocation()))
-			return;
-		FVector newPosition; 
-		const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(GetFootPrintLocation(),newPosition));
-		UE_LOG(W_FootPrint, Warning, TEXT("%s draw foot print Offset: %s"), *GetName(),*Offset.ToString());
-		M_RenderTargetComponent->SetLastPosition(newPosition);
-		M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
-		DrawFootPrintReal(bDrawLast);
-		M_RenderTargetComponent->UpdateMaterialParameters();
+		const FVector printLocation = GetFootPrintLocation();
+		if(bCheckInTargetRegion)
+		{
+			if( M_RenderTargetComponent->IsInRegion(printLocation))
+			{
+				const auto pos = FVector2D(printLocation - M_RenderTargetComponent->GetLastPosition());
+				DrawFootPrintWithPosition(-pos);
+				//UE_LOG(W_FootPrint, Warning, TEXT("%s InRegion draw foot print pos: %s"), *GetName(),*pos.ToString());
+			}
+		}else{
+			FVector newPosition; 
+			const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(printLocation,newPosition));
+			//UE_LOG(W_FootPrint, Warning, TEXT("%s draw foot print Offset: %s"), *GetName(),*Offset.ToString());
+			M_RenderTargetComponent->SetLastPosition(newPosition);
+			M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
+			DrawFootPrintReal(bDrawLast);
+			M_RenderTargetComponent->UpdateMaterialParameters();
+		}
 	}
 }
 

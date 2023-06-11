@@ -26,6 +26,7 @@ protected:
 	void CreateMaterialInstance();
 	float CalcFootPrintRotation() const;
 	void DrawFootPrintReal(bool bDrawLast = true) const;
+	void DrawFootPrintWithPosition(FVector2D offset) const;
 	void FindFootPrintTargetComponent();
 	// Called when the game starts
 	virtual void BeginPlay() override;
