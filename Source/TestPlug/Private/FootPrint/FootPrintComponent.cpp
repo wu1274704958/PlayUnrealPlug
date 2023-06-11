@@ -41,6 +41,7 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTargetComponent->RenderTargetCopy());
 	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(0,0,0.0f,0.0f));
 	M_DrawMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
+	M_DrawMaterialInstance->SetScalarParameterValueByInfo(TEXT("AlphaFactor"),FootPrintAlphaFactor);
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
 	FCanvas Canvas(M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 	Canvas.Clear(FLinearColor::Transparent);
@@ -58,6 +59,7 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos) const
 {
 	M_DrawMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
+	M_DrawMaterialInstance->SetScalarParameterValueByInfo(TEXT("AlphaFactor"),FootPrintAlphaFactor);
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
