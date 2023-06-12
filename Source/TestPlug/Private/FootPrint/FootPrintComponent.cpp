@@ -122,6 +122,7 @@ void UFootPrintComponent::BeginPlay()
 	Super::BeginPlay();
 	if(M_RenderTargetComponent == nullptr)
 		FindFootPrintTargetComponent();
+	if(M_RenderTargetComponent == nullptr) return;
 	M_RenderTargetComponent->CheckInitialization();
 	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	CreateMaterialInstance();
