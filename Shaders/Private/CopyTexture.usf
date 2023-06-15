@@ -1,0 +1,24 @@
+
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+float2 Offset;
+Texture2D Texture; 
+SamplerState Sampler;
+
+void MainVS(
+	in float3 Pos : SV_POSITION,
+	in float2 UV : TEXCOORD0,
+	out float2 OutUV : TEXCOORD0
+	)
+{
+	OutUV = UV;
+}
+
+
+void MainPS(
+	in float2 UV : TEXCOORD0,
+	out float4 OutColor : COLOR
+	)
+{
+	OutColor =  Texture2DSample(Texture,Sampler, UV);
+}
