@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "FootPrint/FootPrintComponent.h"
+#include "FootPrintRender/FootPrintRenderShaderModel.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 

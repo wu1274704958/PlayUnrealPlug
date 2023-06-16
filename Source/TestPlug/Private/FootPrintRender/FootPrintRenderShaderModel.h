@@ -18,20 +18,14 @@ class CopyTextureShader : public FGlobalShader
 public:
 	CopyTextureShader() = default;
 
-	explicit CopyTextureShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
-		: FGlobalShader(Initializer)
-	{
-		Offset.Bind(Initializer.ParameterMap, TEXT("Offset"));
-		Texture.Bind(Initializer.ParameterMap, TEXT("Texture"));
-		Sampler.Bind(Initializer.ParameterMap, TEXT("Sampler"));
-	}
+	explicit CopyTextureShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
 	template <typename TShaderRHIParamRef>
-	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector2D Offset,FTexture* InTexture)
+	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector2D InOffset,FTexture* InTexture)
 	{
-		SetShaderValue(RHICmdList, ShaderRHI, Offset);
+		SetShaderValue(RHICmdList, ShaderRHI, Offset, InOffset);
 		SetTextureParameter(RHICmdList, ShaderRHI, Texture,Sampler,InTexture);
 	}
 
@@ -43,4 +37,4 @@ public:
 DECLARE_SHADER_BY_BASE(VS, CopyTextureShader);
 DECLARE_SHADER_BY_BASE(PS,CopyTextureShader);
 
-void DrawCopyTexture_GameThread(FVector2D Offset,const FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource);
+void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);

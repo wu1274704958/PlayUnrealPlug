@@ -1,0 +1,15 @@
+
+
+float3 QuadVertex[4] = {
+	float3(0.0f, 0.0f, 0.0f),  
+	float3(10.0f, 0.0f, 0.0f),
+	float3(0.0f, 10.0f, 0.0f),
+	float3(1.0f, 10.0f, 0.0f)
+};
+
+float2 QuadUV[4] = {
+	float2(0.0f, 0.0f),
+	float2(1.0f, 0.0f),
+	float2(0.0f, 1.0f),
+	float2(1.0f, 1.0f)
+};

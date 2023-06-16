@@ -6,6 +6,7 @@
 
 #include "CanvasItem.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "FootPrintRender/FootPrintRenderShaderModel.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(W_FootPrint);
@@ -93,25 +94,9 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 {
 	if(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance)
 	{
-		OnDrawFootPrint();
-		const FVector printLocation = GetFootPrintLocation();
-		if(bCheckInTargetRegion)
-		{
-			if( M_RenderTargetComponent->IsInRegion(printLocation))
-			{
-				const auto pos = FVector2D(printLocation - M_RenderTargetComponent->GetLastPosition());
-				DrawFootPrintWithPosition(-pos);
-				//UE_LOG(W_FootPrint, Warning, TEXT("%s InRegion draw foot print pos: %s"), *GetName(),*pos.ToString());
-			}
-		}else{
-			FVector newPosition; 
-			const auto Offset = FVector2D(M_RenderTargetComponent->CalcCurrentDrawOffset(printLocation,newPosition));
-			//UE_LOG(W_FootPrint, Warning, TEXT("%s draw foot print Offset: %s"), *GetName(),*Offset.ToString());
-			M_RenderTargetComponent->SetLastPosition(newPosition);
-			M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
-			DrawFootPrintReal(bDrawLast);
-			M_RenderTargetComponent->UpdateMaterialParameters();
-		}
+		FVector2D Offset(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y);
+		DrawCopyTexture_GameThread(Offset,M_DrawPrintTexture->GetResource(),
+			M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 	}
 }
 
