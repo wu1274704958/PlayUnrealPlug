@@ -43,7 +43,7 @@ void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRen
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
 			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Wireframe,CM_None>::GetRHI();
+			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid,CM_None>::GetRHI();
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false,CF_Always>::GetRHI();
 			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
 			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
@@ -54,7 +54,7 @@ void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRen
 			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),Offset,InTexture);
 			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),Offset,InTexture);
 
-			RHICmdList.DrawPrimitive(0,1,0);
+			RHICmdList.DrawPrimitive(0,2,0);
 		}
 		RHICmdList.EndRenderPass();
 		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::RTV,ERHIAccess::SRVMask));

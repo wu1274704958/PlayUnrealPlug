@@ -2,9 +2,16 @@
 #include "/Engine/Public/Platform.ush"
 #include "/Engine/Private/Common.ush"
 #include "QuadVertex.ush"
+#include "Utils.ush"
+
 float2 Offset;
 Texture2D Texture; 
 SamplerState Sampler;
+
+float2 FlipUV(float2 UV)
+{
+	return float2(UV.x, 1 - UV.y);
+}
 
 void MainVS(
 	in uint GlobalVertexId : SV_VertexID,
@@ -12,8 +19,8 @@ void MainVS(
 	out float4 OutPosition : SV_POSITION
 	)
 {
-	OutPosition = float4(QuadVertex[GlobalVertexId],1.0f);
-	OutUV = QuadUV[GlobalVertexId];
+	OutPosition = float4(GetQuadVertexByIndex(GlobalVertexId),1.0f);
+	OutUV = FlipUV(GetQuadUVByIndex(GlobalVertexId)) + Offset;
 }
 
 
@@ -23,5 +30,5 @@ void MainPS(
 	out float4 OutColor : COLOR
 	)
 {
-	OutColor = float4(1,1,1,1);//  Texture2DSample(Texture,Sampler, UV);
+	OutColor = IsInsideUV(UV) * Texture2DSample(Texture,Sampler, UV); 
 }

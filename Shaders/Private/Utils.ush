@@ -1,0 +1,5 @@
+﻿float IsInsideUV(float2 UV)
+{
+	return step(0.0f,UV.x) * (1.0f - step(1.0f,UV.x))
+			* step(0.0f,UV.y) * (1.0f - step(1.0f,UV.y));
+}

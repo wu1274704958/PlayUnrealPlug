@@ -1,15 +1,23 @@
 
+float3 GetQuadVertexByIndex(int Index) {
+	float3 QuadVertex[6];
+	QuadVertex[0] =	float3(-1.0f, -1.0f, 0.0f); // Bottom left
+	QuadVertex[1] =	float3(1.0f, -1.0f, 0.0f);  // Bottom right
+	QuadVertex[2] =	float3(-1.0f, 1.0f, 0.0f);		// Top left
+	QuadVertex[3] =	float3(1.0f, 1.0f, 0.0f);		// Top right
 
-float3 QuadVertex[4] = {
-	float3(0.0f, 0.0f, 0.0f),  
-	float3(10.0f, 0.0f, 0.0f),
-	float3(0.0f, 10.0f, 0.0f),
-	float3(1.0f, 10.0f, 0.0f)
-};
+	QuadVertex[4] = QuadVertex[2];
+	QuadVertex[5] = QuadVertex[1];
+	return QuadVertex[Index];
+}
+float2 GetQuadUVByIndex(int Index) {
+	float2 QuadVertex[6];
+	QuadVertex[0] =	float2(0.0f, 0.0f); // Bottom left
+	QuadVertex[1] =	float2(1.0f, 0.0f);  // Bottom right
+	QuadVertex[2] =	float2(0.0f, 1.0f);		// Top left
+	QuadVertex[3] =	float2(1.0f, 1.0f);		// Top right
 
-float2 QuadUV[4] = {
-	float2(0.0f, 0.0f),
-	float2(1.0f, 0.0f),
-	float2(0.0f, 1.0f),
-	float2(1.0f, 1.0f)
-};
+	QuadVertex[4] = QuadVertex[2];
+	QuadVertex[5] = QuadVertex[1];
+	return QuadVertex[Index];
+}
