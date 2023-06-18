@@ -37,4 +37,27 @@ public:
 DECLARE_SHADER_BY_BASE(VS, CopyTextureShader);
 DECLARE_SHADER_BY_BASE(PS,CopyTextureShader);
 
+class DrawTextureShader : public FGlobalShader
+{
+	DECLARE_INLINE_TYPE_LAYOUT(DrawTextureShader, NonVirtual);
+public:
+	DrawTextureShader() = default;
+	explicit DrawTextureShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters);
+	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
+	template <typename TShaderRHIParamRef>
+	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture)
+	{
+		SetShaderValue(RHICmdList, ShaderRHI, PositionAndRotate, PosAndRotate);
+		SetShaderValue(RHICmdList, ShaderRHI, SizeAndPivot, InSizeAndPivot);
+		SetTextureParameter(RHICmdList, ShaderRHI, Texture,Sampler,InTexture);
+	}
+	LAYOUT_FIELD(FShaderResourceParameter, Texture);
+	LAYOUT_FIELD(FShaderResourceParameter, Sampler);
+	LAYOUT_FIELD(FShaderParameter,PositionAndRotate);
+	LAYOUT_FIELD(FShaderParameter,SizeAndPivot);
+};
+
+DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
+DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);

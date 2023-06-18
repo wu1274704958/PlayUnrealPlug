@@ -1,0 +1,46 @@
+﻿
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+#include "QuadVertex.ush"
+#include "Utils.ush"
+
+float3 PositionAndRotate;
+float4 SizeAndPivot;
+Texture2D Texture; 
+SamplerState Sampler;
+
+void MainVS(
+	in uint GlobalVertexId : SV_VertexID,
+	out float2 OutUV : TEXCOORD0,
+	out float4 OutPosition : SV_POSITION
+	)
+{
+	OutPosition = float4(GetQuadVertexByIndex(GlobalVertexId),1.0f);
+	OutUV = FlipUV(GetQuadUVByIndex(GlobalVertexId));
+}
+
+void MainPS(
+	in float2 UV : TEXCOORD0,
+	in float4 Position : SV_POSITION,
+	out float4 OutColor : COLOR
+	)
+{
+	float2 BL = FlipUV(GetQuadUVByIndex(0)) - float2(0.5f,0.5f) + SizeAndPivot.zw; // 0,1 - 0.5,0.5  = -0.5 ,0.5
+	float2 BR = FlipUV(GetQuadUVByIndex(1)) - float2(0.5f,0.5f) + SizeAndPivot.zw; // 1,1	- 0.5,0.5  = 0.5 ,0.5
+	float2 TL = FlipUV(GetQuadUVByIndex(2)) - float2(0.5f,0.5f) + SizeAndPivot.zw; // 0,0 - 0.5,0.5  = -0.5,-0.5
+	float2 TR = FlipUV(GetQuadUVByIndex(3)) - float2(0.5f,0.5f) + SizeAndPivot.zw; // 1,0 - 0.5,0.5  = 0.5,-0.5
+	const float2x2 ScaleMat = ScaleMatrix(SizeAndPivot.xy);
+	const float2x2 RotMat = RotateMatrix(DegreesToRadians(PositionAndRotate.z));
+	BL = mul(mul(BL,ScaleMat), RotMat) + PositionAndRotate.xy;
+	BR = mul(mul(BR,ScaleMat), RotMat) + PositionAndRotate.xy;
+	TL = mul(mul(TL,ScaleMat), RotMat) + PositionAndRotate.xy;
+	TR = mul(mul(TR,ScaleMat), RotMat) + PositionAndRotate.xy;
+
+	float b1 = TriangleContainPoint(BL,BR,TL,UV);
+	float b2 = TriangleContainPoint(TL,BR,TR,UV);
+	if(b1 <= 0.0f && b2 <= 0.0f)
+	{
+		discard;
+	}
+	OutColor = Texture2DSample(Texture,Sampler, UV); 
+}

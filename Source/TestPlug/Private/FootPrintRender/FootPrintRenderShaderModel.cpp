@@ -23,8 +23,29 @@ void CopyTextureShader::ModifyCompilationEnvironment(const FGlobalShaderPermutat
 IMPLEMENT_SHADER_TYPE(,CopyTextureShaderVS,TEXT("/Shaders/CopyTexture.usf"),TEXT("MainVS"),SF_Vertex)
 IMPLEMENT_SHADER_TYPE(,CopyTextureShaderPS,TEXT("/Shaders/CopyTexture.usf"),TEXT("MainPS"),SF_Pixel)
 
+DrawTextureShader::DrawTextureShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+	: FGlobalShader(Initializer)
+{
+	PositionAndRotate.Bind(Initializer.ParameterMap, TEXT("PositionAndRotate"));
+	SizeAndPivot.Bind(Initializer.ParameterMap, TEXT("SizeAndPivot"));
+	Texture.Bind(Initializer.ParameterMap, TEXT("Texture"));
+	Sampler.Bind(Initializer.ParameterMap, TEXT("Sampler"));
+}
+bool DrawTextureShader::ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+{
+	return IsFeatureLevelSupported(	Parameters.Platform, ERHIFeatureLevel::SM5);
+}
+void DrawTextureShader::ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters,
+	FShaderCompilerEnvironment& OutEnvironment)
+{
+	FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
+}
+
+IMPLEMENT_SHADER_TYPE(,DrawTextureShaderVS,TEXT("/Shaders/DrawTexture.usf"),TEXT("MainVS"),SF_Vertex)
+IMPLEMENT_SHADER_TYPE(,DrawTextureShaderPS,TEXT("/Shaders/DrawTexture.usf"),TEXT("MainPS"),SF_Pixel)
+
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource,
-	ERHIFeatureLevel::Type FeatureLevel)
+                                ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
 	RenderScope.EnqueueRenderCommand([Offset,InTexture,OutTextureRenderTargetResource,FeatureLevel](FRHICommandListImmediate& RHICmdList)

@@ -8,11 +8,6 @@ float2 Offset;
 Texture2D Texture; 
 SamplerState Sampler;
 
-float2 FlipUV(float2 UV)
-{
-	return float2(UV.x, 1 - UV.y);
-}
-
 void MainVS(
 	in uint GlobalVertexId : SV_VertexID,
 	out float2 OutUV : TEXCOORD0,
