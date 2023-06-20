@@ -81,3 +81,50 @@ void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRen
 		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::RTV,ERHIAccess::SRVMask));
 	});
 }
+
+void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,
+	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel)
+{
+	FRenderThreadScope RenderScope;
+	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InTexture,OutTextureRenderTargetResource,FeatureLevel](FRHICommandListImmediate& RHICmdList)
+	{
+		FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
+		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::SRVMask,ERHIAccess::RTV));
+
+		const FRHIRenderPassInfo RenderPassInfo(RT,ERenderTargetActions::Load_Store);
+		RHICmdList.BeginRenderPass(RenderPassInfo,TEXT("DrawTexture"));
+		{
+			const FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+			TShaderMapRef<DrawTextureShaderVS> VertexShader(GlobalShaderMap);
+			TShaderMapRef<DrawTextureShaderPS> PixelShader(GlobalShaderMap);
+
+			FGraphicsPipelineStateInitializer GraphicsPSOInit;
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid,CM_None>::GetRHI();
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false,CF_Always>::GetRHI();
+			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
+			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
+			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+
+			RHICmdList.SetViewport(0,0,0,RT->GetSizeX(),RT->GetSizeY(),1);
+			FVector RPosAndRotate(
+				PosAndRotate.X / static_cast<float>(RT->GetSizeX()),
+				PosAndRotate.Y / static_cast<float>(RT->GetSizeY()),
+				PosAndRotate.Z);
+			FVector4 RSizeAndPivot(
+				InSizeAndPivot.X / static_cast<float>(RT->GetSizeX()),
+				InSizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
+				InSizeAndPivot.Z,
+				InSizeAndPivot.W);
+			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),RPosAndRotate,RSizeAndPivot,InTexture);
+			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),RPosAndRotate,RSizeAndPivot,InTexture);
+
+			RHICmdList.DrawPrimitive(0,2,0);
+		}
+		RHICmdList.EndRenderPass();
+		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::RTV,ERHIAccess::SRVMask));
+	});
+}

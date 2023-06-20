@@ -61,3 +61,4 @@ public:
 DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
 DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
+void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);

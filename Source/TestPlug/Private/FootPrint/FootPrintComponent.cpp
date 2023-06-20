@@ -95,7 +95,7 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 	if(M_RenderTargetComponent && M_DrawPrintTexture && M_DrawMaterialInstance)
 	{
 		FVector2D Offset(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y);
-		DrawCopyTexture_GameThread(Offset,M_DrawPrintTexture->GetResource(),
+		DrawTexture_GameThread(FVector(100,100,45),FVector4(50,50,0,0),M_DrawPrintTexture->GetResource(),
 			M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 	}
 }

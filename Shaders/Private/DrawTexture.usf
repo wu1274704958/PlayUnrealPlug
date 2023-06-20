@@ -42,5 +42,6 @@ void MainPS(
 	{
 		discard;
 	}
-	OutColor = Texture2DSample(Texture,Sampler, UV); 
+	float2 uv2 = (UV - BL) / SizeAndPivot.xy;
+	OutColor = Texture2DSample(Texture,Sampler, uv2); 
 }
