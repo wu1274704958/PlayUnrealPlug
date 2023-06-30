@@ -121,13 +121,8 @@ FVector4 UFootPrintRenderTargetComponent::CalcCurrentDrawOffset(FVector pos,FVec
 void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) const
 {
 	check(M_CopyMaterialInstance && M_RenderTarget && M_RenderTargetCopy);
-	M_CopyMaterialInstance->SetTextureParameterValue(TEXT("RenderTarget"), M_RenderTarget);
-	M_CopyMaterialInstance->SetVectorParameterValue(TEXT("Offset"), FLinearColor(Offset.X,Offset.Y,0.0f,0.0f));
-	FCanvas Canvas(M_RenderTargetCopy->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
-	Canvas.Clear(FLinearColor::Transparent);
-	FCanvasTileItem TileItem(FVector2D(0.f,0.f),M_CopyMaterialInstance->GetRenderProxy(), FVector2D(M_RenderTargetSize.X,M_RenderTargetSize.Y));
-	Canvas.DrawItem(TileItem);
-	Canvas.Flush_GameThread();
+
+	DrawCopyTexture_GameThread(Offset,M_RenderTarget->GetResource(),M_RenderTargetCopy->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintRenderTargetComponent::SetLastPosition(FVector Position)

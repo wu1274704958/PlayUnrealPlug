@@ -102,7 +102,7 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 			FGraphicsPipelineStateInitializer GraphicsPSOInit;
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
-			GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_SourceAlpha,BF_DestAlpha,BO_Add,BF_One,BF_One>::GetRHI();
+			GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_SourceAlpha,BF_One,BO_Add,BF_One,BF_One>::GetRHI();
 			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid,CM_None>::GetRHI();
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false,CF_Always>::GetRHI();
 			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
@@ -173,7 +173,7 @@ void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FV
 
 				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = DrawVertexShader.GetVertexShader();
 				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = DrawPixelShader.GetPixelShader();
-				GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_SourceAlpha,BF_DestAlpha,BO_Add,BF_One,BF_One>::GetRHI();
+				GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_SourceAlpha,BF_One,BO_Add,BF_One,BF_One>::GetRHI();
 				
 				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 				FVector RPosAndRotate(

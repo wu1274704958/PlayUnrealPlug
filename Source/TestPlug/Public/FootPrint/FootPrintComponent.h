@@ -25,9 +25,11 @@ public:
 protected:
 	void CreateMaterialInstance();
 	float CalcFootPrintRotation() const;
+	FTexture* GetDrawPrintResource() const;
 	void DrawFootPrintReal(bool bDrawLast = true) const;
 	void DrawFootPrintWithPosition(FVector2D offset) const;
 	void FindFootPrintTargetComponent();
+	void CheckCreateBrush();
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual FVector GetFootPrintLocation() const;
@@ -47,14 +49,15 @@ protected:
 	UFootPrintRenderTargetComponent* M_RenderTargetComponent;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	UTexture2D *M_DrawPrintTexture;
+	
+	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
+	UTextureRenderTarget2D* M_GenBrush;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
-	UMaterial *M_CopyMaterial;
+	UMaterial *M_GenBrushMaterial;
 	UPROPERTY(VisibleAnywhere,Category="FootPrint")
-	UMaterialInstanceDynamic *M_CopyMaterialInstance;
-	UPROPERTY(EditAnywhere,Category="FootPrint")
-	UMaterial *M_DrawMaterial;
-	UPROPERTY(VisibleAnywhere,Category="FootPrint")
-	UMaterialInstanceDynamic *M_DrawMaterialInstance;
+	UMaterialInstanceDynamic *M_GenBrushMaterialInstance;
+	
+	
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	FVector2D PivotPointOffset = FVector2D(0.f,0.f);
 	UPROPERTY(EditAnywhere,Category="FootPrint")
