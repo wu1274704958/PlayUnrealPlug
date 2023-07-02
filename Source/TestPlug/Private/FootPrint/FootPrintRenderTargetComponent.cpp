@@ -36,8 +36,8 @@ void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* 
 
 void UFootPrintRenderTargetComponent::CheckInitialization()
 {
-	M_RegionBounds.BoxExtent.X = M_RenderTargetSize.X;
-	M_RegionBounds.BoxExtent.Y = M_RenderTargetSize.Y;
+	M_RegionBounds.BoxExtent.X = M_RenderTargetSize.X / 2.f;
+	M_RegionBounds.BoxExtent.Y = M_RenderTargetSize.Y / 2.f;
 	UpdateMaterialParameters(M_CopyMaterialInstance != nullptr);
 	if(M_CopyMaterialInstance == nullptr)
 		CreateMaterialInstance();
