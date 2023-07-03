@@ -46,25 +46,25 @@ public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
 	template <typename TShaderRHIParamRef>
-	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float alphaFactor)
+	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float zeroPlaneDepth)
 	{
 		SetShaderValue(RHICmdList, ShaderRHI, PositionAndRotate, PosAndRotate);
 		SetShaderValue(RHICmdList, ShaderRHI, SizeAndPivot, InSizeAndPivot);
 		SetTextureParameter(RHICmdList, ShaderRHI, Texture,Sampler,InTexture);
-		SetShaderValue(RHICmdList, ShaderRHI, AlphaFactor, alphaFactor);
+		SetShaderValue(RHICmdList, ShaderRHI, ZeroPlaneDepth, zeroPlaneDepth);
 	}
 	LAYOUT_FIELD(FShaderResourceParameter, Texture);
 	LAYOUT_FIELD(FShaderResourceParameter, Sampler);
 	LAYOUT_FIELD(FShaderParameter,PositionAndRotate);
 	LAYOUT_FIELD(FShaderParameter,SizeAndPivot);
-	LAYOUT_FIELD(FShaderParameter,AlphaFactor);
+	LAYOUT_FIELD(FShaderParameter,ZeroPlaneDepth);
 };
 
 DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
 DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float alphaFactor,
+void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float zeroPlaneDepth,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,float alphaFactor,
+void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,float zeroPlaneDepth,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);

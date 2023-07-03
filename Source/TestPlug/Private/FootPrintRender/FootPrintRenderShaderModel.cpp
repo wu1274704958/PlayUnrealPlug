@@ -30,7 +30,7 @@ DrawTextureShader::DrawTextureShader(const ShaderMetaType::CompiledShaderInitial
 	SizeAndPivot.Bind(Initializer.ParameterMap, TEXT("SizeAndPivot"));
 	Texture.Bind(Initializer.ParameterMap, TEXT("Texture"));
 	Sampler.Bind(Initializer.ParameterMap, TEXT("Sampler"));
-	AlphaFactor.Bind(Initializer.ParameterMap, TEXT("AlphaFactor"));
+	ZeroPlaneDepth.Bind(Initializer.ParameterMap, TEXT("ZeroPlaneDepth"));
 }
 bool DrawTextureShader::ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 {
@@ -83,11 +83,11 @@ void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FTextureRen
 	});
 }
 
-void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,float alphaFactor,
+void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,float zeroPlaneDepth,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
-	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InTexture,OutTextureRenderTargetResource,FeatureLevel,alphaFactor](FRHICommandListImmediate& RHICmdList)
+	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth](FRHICommandListImmediate& RHICmdList)
 	{
 		FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
 		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::SRVMask,ERHIAccess::RTV));
@@ -120,8 +120,8 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 				InSizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
 				InSizeAndPivot.Z,
 				InSizeAndPivot.W);
-			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),RPosAndRotate,RSizeAndPivot,InTexture,alphaFactor);
-			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),RPosAndRotate,RSizeAndPivot,InTexture,alphaFactor);
+			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),RPosAndRotate,RSizeAndPivot,InTexture,zeroPlaneDepth);
+			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),RPosAndRotate,RSizeAndPivot,InTexture,zeroPlaneDepth);
 
 			RHICmdList.DrawPrimitive(0,2,0);
 		}
@@ -131,13 +131,13 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 }
 
 void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FVector PosAndRotate,
-                                   FVector4 InSizeAndPivot, FTexture* InTexture,float alphaFactor,
+                                   FVector4 InSizeAndPivot, FTexture* InTexture,float zeroPlaneDepth,
                                    FTextureRenderTargetResource* OutTextureRenderTargetResource,
                                    ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
 	RenderScope.EnqueueRenderCommand(
-		[Offset,InCopyTexture,PosAndRotate,InSizeAndPivot,InTexture,OutTextureRenderTargetResource,FeatureLevel,alphaFactor](
+		[Offset,InCopyTexture,PosAndRotate,InSizeAndPivot,InTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth](
 		FRHICommandListImmediate& RHICmdList)
 		{
 			FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
@@ -186,9 +186,9 @@ void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FV
 					InSizeAndPivot.Z,
 					InSizeAndPivot.W);
 				DrawVertexShader->SetParameters(RHICmdList, DrawVertexShader.GetVertexShader(), RPosAndRotate,
-				                                RSizeAndPivot, InTexture,alphaFactor);
+				                                RSizeAndPivot, InTexture,zeroPlaneDepth);
 				DrawPixelShader->SetParameters(RHICmdList, DrawPixelShader.GetPixelShader(), RPosAndRotate,
-				                               RSizeAndPivot, InTexture,alphaFactor);
+				                               RSizeAndPivot, InTexture,zeroPlaneDepth);
 
 				//draw texture
 				RHICmdList.DrawPrimitive(0, 2, 0);

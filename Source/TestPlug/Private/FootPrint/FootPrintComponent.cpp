@@ -46,7 +46,7 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 	DrawAndCopyTexture_GameThread(FVector2D(0.f,0.f),M_RenderTargetComponent->RenderTargetCopy()->GetResource(),
 		FVector(RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),CalcFootPrintRotation() + RotateOffset),
 		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		GetDrawPrintResource(),FootPrintAlphaFactor,M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+		GetDrawPrintResource(),M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos) const
@@ -57,7 +57,7 @@ void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos) const
 
 	const auto Pos = RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y) + pos;
 	DrawTexture_GameThread(FVector(Pos,CalcFootPrintRotation() + RotateOffset),FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		GetDrawPrintResource(),FootPrintAlphaFactor,M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+		GetDrawPrintResource(),M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::FindFootPrintTargetComponent()
@@ -85,6 +85,7 @@ void UFootPrintComponent::CheckCreateBrush()
 		M_GenBrush->InitCustomFormat(M_DrawPrintTexture->GetSizeX(),M_DrawPrintTexture->GetSizeY(),PF_R8G8B8A8,false);
 		M_GenBrush->UpdateResourceImmediate();
 
+		M_GenBrushMaterialInstance->SetScalarParameterValue(TEXT("ZeroPlaneDepth"),M_RenderTargetComponent->GetZeroPlaneDepth());
 		M_GenBrushMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
 		FCanvas Canvas(M_GenBrush->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
 		Canvas.Clear(FLinearColor::Black);

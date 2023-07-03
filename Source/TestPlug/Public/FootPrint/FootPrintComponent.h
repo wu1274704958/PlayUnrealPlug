@@ -66,8 +66,6 @@ protected:
 	bool bBeginPlayDraw = true;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bCheckInTargetRegion = false;
-	UPROPERTY(EditAnywhere,Category="FootPrint")
-	float FootPrintAlphaFactor = 1.f;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bAdjustFootPrint = false;

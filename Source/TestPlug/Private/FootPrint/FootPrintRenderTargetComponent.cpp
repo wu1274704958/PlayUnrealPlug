@@ -29,7 +29,7 @@ void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* 
 	if(rt != nullptr)
 	{
 		FCanvas Canvas(rt->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
-		Canvas.Clear(FLinearColor::Transparent);
+		Canvas.Clear(FLinearColor(FootPrintZeroPlaneDepth,FootPrintZeroPlaneDepth,FootPrintZeroPlaneDepth,0.f));
 		Canvas.Flush_GameThread();
 	}
 }
@@ -67,7 +67,7 @@ void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosit
 			Vectors[M_MaterialParameterCollectionIndex].ParameterName = TEXT("FootPrintTargetPosition");
 			Vectors[M_MaterialParameterCollectionIndex + 1].ParameterName = TEXT("FootPrintTargetSize");
 			Vectors[M_MaterialParameterCollectionIndex].DefaultValue = FLinearColor(Pos);
-			Vectors[M_MaterialParameterCollectionIndex + 1].DefaultValue = FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,0.0f,0.0f);
+			Vectors[M_MaterialParameterCollectionIndex + 1].DefaultValue = FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,FootPrintZeroPlaneDepth,0.0f);
 		}
 		M_MaterialParameterCollection->PreEditChange(nullptr);
 		M_MaterialParameterCollection->PostEditChange();

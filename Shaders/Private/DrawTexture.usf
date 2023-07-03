@@ -8,7 +8,7 @@ float3 PositionAndRotate;
 float4 SizeAndPivot;
 Texture2D Texture; 
 SamplerState Sampler;
-float AlphaFactor;
+float ZeroPlaneDepth;
 
 void MainVS(
 	in uint GlobalVertexId : SV_VertexID,
@@ -49,5 +49,5 @@ void MainPS(
 	float len = length(UB);
 	float2 uv2 = float2(len * sin(angle1),len * cos(angle1)) / SizeAndPivot.xy;
 	OutColor = Texture2DSample(Texture,Sampler, FlipUV(uv2));
-	OutColor.a = AlphaFactor * OutColor.a;
+	//OutColor.a = ZeroPlaneDepth * OutColor.a;
 }

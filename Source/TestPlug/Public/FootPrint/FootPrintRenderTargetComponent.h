@@ -66,7 +66,8 @@ public:
 	{
 		return M_RenderTargetCopy;
 	}
-
+	UFUNCTION(BlueprintCallable, Category = "FootPrint")
+	float GetZeroPlaneDepth() const { return FootPrintZeroPlaneDepth;}
 protected:
 	UPROPERTY(EditAnywhere, Category="FootPrint")
 	TEnumAsByte<EPixelFormat> M_RenderTargetFormat = EPixelFormat::PF_R8G8B8A8; 
@@ -87,6 +88,8 @@ protected:
 	FBoxSphereBounds M_RegionBounds;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float M_RegionZOffset = 0.0f;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	float FootPrintZeroPlaneDepth = 0.3f;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bDrawRegion = false;
