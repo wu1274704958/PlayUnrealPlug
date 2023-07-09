@@ -24,8 +24,8 @@ UFootPrintComponent::UFootPrintComponent()
 
 void UFootPrintComponent::CreateMaterialInstance()
 {
-	if(M_GenBrushMaterial != nullptr)
-		M_GenBrushMaterialInstance = UMaterialInstanceDynamic::Create(M_GenBrushMaterial, this);
+	// if(M_GenBrushMaterial != nullptr)
+	// 	M_GenBrushMaterialInstance = UMaterialInstanceDynamic::Create(M_GenBrushMaterial, this);
 }
 
 float UFootPrintComponent::CalcFootPrintRotation() const
@@ -35,10 +35,10 @@ float UFootPrintComponent::CalcFootPrintRotation() const
 
 FTexture* UFootPrintComponent::GetDrawPrintResource() const
 {
-	return M_GenBrush != nullptr ? M_GenBrush->GetResource() : M_DrawPrintTexture->GetResource();
+	return nullptr;//M_GenBrush != nullptr ? M_GenBrush->GetResource() : M_DrawPrintTexture->GetResource();
 }
 
-void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
+void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast,int DrawIndex) const
 {
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
@@ -46,18 +46,23 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast) const
 	DrawAndCopyTexture_GameThread(FVector2D(0.f,0.f),M_RenderTargetComponent->RenderTargetCopy()->GetResource(),
 		FVector(RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),CalcFootPrintRotation() + RotateOffset),
 		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		GetDrawPrintResource(),M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
+		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
+		M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
-void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos) const
+void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos,int DrawIndex) const
 {
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
 
 	const auto Pos = RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y) + pos;
-	DrawTexture_GameThread(FVector(Pos,CalcFootPrintRotation() + RotateOffset),FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		GetDrawPrintResource(),M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+	DrawTexture_GameThread(FVector(Pos,CalcFootPrintRotation() + RotateOffset),
+		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
+		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
+		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
+		M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::FindFootPrintTargetComponent()
@@ -79,25 +84,25 @@ void UFootPrintComponent::FindFootPrintTargetComponent()
 
 void UFootPrintComponent::CheckCreateBrush()
 {
-	if(M_GenBrushMaterialInstance != nullptr)
-	{
-		M_GenBrush = NewObject<UTextureRenderTarget2D>(this,  "FootPrintGenBrush");
-		M_GenBrush->InitCustomFormat(M_DrawPrintTexture->GetSizeX(),M_DrawPrintTexture->GetSizeY(),PF_R8G8B8A8,false);
-		M_GenBrush->UpdateResourceImmediate();
-
-		M_GenBrushMaterialInstance->SetScalarParameterValue(TEXT("ZeroPlaneDepth"),M_RenderTargetComponent->GetZeroPlaneDepth());
-		M_GenBrushMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
-		FCanvas Canvas(M_GenBrush->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
-		Canvas.Clear(FLinearColor::Black);
-		FCanvasTileItem Item(FVector2D(0.0f,0.0f),M_GenBrushMaterialInstance->GetRenderProxy(), FVector2D(M_DrawPrintTexture->GetSizeX(),M_DrawPrintTexture->GetSizeY()));
-		Canvas.DrawItem(Item);
-		Canvas.Flush_GameThread();
-	}
+	// if(M_GenBrushMaterialInstance != nullptr)
+	// {
+	// 	M_GenBrush = NewObject<UTextureRenderTarget2D>(this,  "FootPrintGenBrush");
+	// 	M_GenBrush->InitCustomFormat(M_DrawPrintTexture->GetSizeX(),M_DrawPrintTexture->GetSizeY(),PF_R8G8B8A8,false);
+	// 	M_GenBrush->UpdateResourceImmediate();
+	//
+	// 	M_GenBrushMaterialInstance->SetScalarParameterValue(TEXT("ZeroPlaneDepth"),M_RenderTargetComponent->GetZeroPlaneDepth());
+	// 	M_GenBrushMaterialInstance->SetTextureParameterValue(TEXT("Texture"),M_DrawPrintTexture);
+	// 	FCanvas Canvas(M_GenBrush->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
+	// 	Canvas.Clear(FLinearColor::Black);
+	// 	FCanvasTileItem Item(FVector2D(0.0f,0.0f),M_GenBrushMaterialInstance->GetRenderProxy(), FVector2D(M_DrawPrintTexture->GetSizeX(),M_DrawPrintTexture->GetSizeY()));
+	// 	Canvas.DrawItem(Item);
+	// 	Canvas.Flush_GameThread();
+	// }
 }
 
-void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
+void UFootPrintComponent::DrawFootPrint(bool bDrawLast,int DrawIndex)
 {
-	if(M_RenderTargetComponent && M_DrawPrintTexture )
+	if(M_RenderTargetComponent && DrawIndex >= 0 && DrawIndex < M_DrawPrintTextures.Num() && M_DrawPrintTextures[DrawIndex].Depth && M_DrawPrintTextures[DrawIndex].Sdf )
 	{
 		OnDrawFootPrint();
 		const FVector printLocation = GetFootPrintLocation();
@@ -106,7 +111,7 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 			if( M_RenderTargetComponent->IsInRegion(printLocation))
 			{
 				const auto pos = FVector2D(printLocation - M_RenderTargetComponent->GetLastPosition());
-				DrawFootPrintWithPosition(-pos);
+				DrawFootPrintWithPosition(-pos,DrawIndex);
 				//UE_LOG(W_FootPrint, Warning, TEXT("%s InRegion draw foot print pos: %s"), *GetName(),*pos.ToString());
 			}
 		}else{
@@ -115,7 +120,7 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast)
 			//UE_LOG(W_FootPrint, Warning, TEXT("%s draw foot print Offset: %s"), *GetName(),*Offset.ToString());
 			M_RenderTargetComponent->SetLastPosition(newPosition);
 			M_RenderTargetComponent->CopyAndMoveRenderTarget(Offset);
-			DrawFootPrintReal(bDrawLast);
+			DrawFootPrintReal(bDrawLast,DrawIndex);
 			M_RenderTargetComponent->UpdateMaterialParameters();
 		}
 	}

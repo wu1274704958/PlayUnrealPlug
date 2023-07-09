@@ -23,15 +23,18 @@ public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
 	template <typename TShaderRHIParamRef>
-	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector2D InOffset,FTexture* InTexture)
+	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector2D InOffset,FTexture* InTexture,
+		FLinearColor InSubtractColor = FLinearColor(0.0f,0.0f,0.0f,0.0f))
 	{
 		SetShaderValue(RHICmdList, ShaderRHI, Offset, InOffset);
 		SetTextureParameter(RHICmdList, ShaderRHI, Texture,Sampler,InTexture);
+		SetShaderValue(RHICmdList, ShaderRHI, SubtractColor,InSubtractColor);
 	}
 
 	LAYOUT_FIELD(FShaderResourceParameter, Texture);
 	LAYOUT_FIELD(FShaderResourceParameter, Sampler);
 	LAYOUT_FIELD(FShaderParameter,Offset);
+	LAYOUT_FIELD(FShaderParameter,SubtractColor);
 };
 
 DECLARE_SHADER_BY_BASE(VS, CopyTextureShader);
@@ -46,15 +49,20 @@ public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
 	template <typename TShaderRHIParamRef>
-	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float zeroPlaneDepth)
+	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,
+		FTexture* InDepthTexture,
+		FTexture* InSdfTexture,float zeroPlaneDepth)
 	{
 		SetShaderValue(RHICmdList, ShaderRHI, PositionAndRotate, PosAndRotate);
 		SetShaderValue(RHICmdList, ShaderRHI, SizeAndPivot, InSizeAndPivot);
-		SetTextureParameter(RHICmdList, ShaderRHI, Texture,Sampler,InTexture);
+		SetTextureParameter(RHICmdList, ShaderRHI,DepthTexture,DepthSampler,InDepthTexture);
+		SetTextureParameter(RHICmdList,ShaderRHI,SdfTexture,SdfSampler,InSdfTexture);
 		SetShaderValue(RHICmdList, ShaderRHI, ZeroPlaneDepth, zeroPlaneDepth);
 	}
-	LAYOUT_FIELD(FShaderResourceParameter, Texture);
-	LAYOUT_FIELD(FShaderResourceParameter, Sampler);
+	LAYOUT_FIELD(FShaderResourceParameter, DepthTexture);
+	LAYOUT_FIELD(FShaderResourceParameter, DepthSampler);
+	LAYOUT_FIELD(FShaderResourceParameter, SdfTexture);
+	LAYOUT_FIELD(FShaderResourceParameter, SdfSampler);
 	LAYOUT_FIELD(FShaderParameter,PositionAndRotate);
 	LAYOUT_FIELD(FShaderParameter,SizeAndPivot);
 	LAYOUT_FIELD(FShaderParameter,ZeroPlaneDepth);
@@ -62,9 +70,9 @@ public:
 
 DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
 DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
-void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,
+void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FLinearColor InSubtractColor,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InTexture,float zeroPlaneDepth,
+void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InTexture,float zeroPlaneDepth,
-	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);
+void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,
+	float zeroPlaneDepth,FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);

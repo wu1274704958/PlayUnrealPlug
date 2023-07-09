@@ -12,6 +12,16 @@
 DECLARE_LOG_CATEGORY_EXTERN(W_FootPrint,Warning,All);
 
 
+USTRUCT()
+struct FFootPrintTexture
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, Category = "FootPrint")
+	UTexture2D *Depth;
+	UPROPERTY(EditAnywhere, Category = "FootPrint" )
+	UTexture2D *Sdf;
+};
+
 UCLASS(ClassGroup=(FootPrint), meta=(BlueprintSpawnableComponent))
 class TESTPLUG_API UFootPrintComponent : public USceneComponent
 {
@@ -21,13 +31,13 @@ public:
 	// Sets default values for this component's properties
 	UFootPrintComponent();
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
-	void DrawFootPrint(bool bDrawLast = true);
+	void DrawFootPrint(bool bDrawLast = true,int DrawIndex = 0);
 protected:
 	void CreateMaterialInstance();
 	float CalcFootPrintRotation() const;
 	FTexture* GetDrawPrintResource() const;
-	void DrawFootPrintReal(bool bDrawLast = true) const;
-	void DrawFootPrintWithPosition(FVector2D offset) const;
+	void DrawFootPrintReal(bool bDrawLast = true,int DrawIndex = 0) const;
+	void DrawFootPrintWithPosition(FVector2D offset,int DrawIndex) const;
 	void FindFootPrintTargetComponent();
 	void CheckCreateBrush();
 	// Called when the game starts
@@ -48,14 +58,14 @@ protected:
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	UFootPrintRenderTargetComponent* M_RenderTargetComponent;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
-	UTexture2D *M_DrawPrintTexture;
+	TArray<FFootPrintTexture> M_DrawPrintTextures;
 	
-	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
-	UTextureRenderTarget2D* M_GenBrush;
-	UPROPERTY(EditAnywhere,Category="FootPrint")
-	UMaterial *M_GenBrushMaterial;
-	UPROPERTY(VisibleAnywhere,Category="FootPrint")
-	UMaterialInstanceDynamic *M_GenBrushMaterialInstance;
+	// UPROPERTY(VisibleAnywhere,Category= "FootPrint")
+	// UTextureRenderTarget2D* M_GenBrush;
+	// UPROPERTY(EditAnywhere,Category="FootPrint")
+	// UMaterial *M_GenBrushMaterial;
+	// UPROPERTY(VisibleAnywhere,Category="FootPrint")
+	// UMaterialInstanceDynamic *M_GenBrushMaterialInstance;
 	
 	
 	UPROPERTY(EditAnywhere,Category="FootPrint")

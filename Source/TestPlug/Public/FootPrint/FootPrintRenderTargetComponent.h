@@ -70,7 +70,7 @@ public:
 	float GetZeroPlaneDepth() const { return FootPrintZeroPlaneDepth;}
 protected:
 	UPROPERTY(EditAnywhere, Category="FootPrint")
-	TEnumAsByte<EPixelFormat> M_RenderTargetFormat = EPixelFormat::PF_R8G8B8A8; 
+	TEnumAsByte<EPixelFormat> M_RenderTargetFormat = EPixelFormat::PF_G16; 
 	UPROPERTY(EditAnywhere,Category= "FootPrint")
 	UTextureRenderTarget2D* M_RenderTarget;
 	UPROPERTY(VisibleAnywhere,Category= "FootPrint")

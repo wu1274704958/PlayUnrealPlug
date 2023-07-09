@@ -29,7 +29,7 @@ void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* 
 	if(rt != nullptr)
 	{
 		FCanvas Canvas(rt->GameThread_GetRenderTargetResource(), nullptr,GetWorld(), GMaxRHIFeatureLevel);
-		Canvas.Clear(FLinearColor(FootPrintZeroPlaneDepth,FootPrintZeroPlaneDepth,FootPrintZeroPlaneDepth,0.f));
+		Canvas.Clear(FLinearColor(0.0f,0.0f,0.0f,0.f));
 		Canvas.Flush_GameThread();
 	}
 }
@@ -48,7 +48,8 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
 	M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
-	M_RenderTarget->Filter = TextureFilter::TF_Nearest;
+	M_RenderTarget->Filter = TextureFilter::TF_Trilinear;
+	M_RenderTarget->ClearColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
 	ClearRenderTarget(M_RenderTarget);
 }
 
@@ -122,7 +123,8 @@ void UFootPrintRenderTargetComponent::CopyAndMoveRenderTarget(FVector2D Offset) 
 {
 	check(M_CopyMaterialInstance && M_RenderTarget && M_RenderTargetCopy);
 
-	DrawCopyTexture_GameThread(Offset,M_RenderTarget->GetResource(),M_RenderTargetCopy->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+	DrawCopyTexture_GameThread(Offset,M_RenderTarget->GetResource(),M_RenderTarget->ClearColor,
+		M_RenderTargetCopy->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintRenderTargetComponent::SetLastPosition(FVector Position)

@@ -7,6 +7,7 @@
 float2 Offset;
 Texture2D Texture; 
 SamplerState Sampler;
+float4 SubtractColor;
 
 void MainVS(
 	in uint GlobalVertexId : SV_VertexID,
@@ -25,5 +26,5 @@ void MainPS(
 	out float4 OutColor : COLOR
 	)
 {
-	OutColor = IsInsideUV(UV) * Texture2DSample(Texture,Sampler, UV); 
+	OutColor = IsInsideUV(UV) * (Texture2DSample(Texture,Sampler, UV) - SubtractColor); 
 }
