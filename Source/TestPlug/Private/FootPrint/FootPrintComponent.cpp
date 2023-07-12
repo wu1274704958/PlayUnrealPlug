@@ -131,6 +131,12 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast,int DrawIndex)
 void UFootPrintComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	for(const auto& Texture : M_DrawPrintTextures)
+	{
+		Texture.Depth->AddressX = Texture.Depth->AddressY = TextureAddress::TA_Clamp;
+		Texture.Sdf->AddressX = Texture.Sdf->AddressY = TextureAddress::TA_Clamp;
+		//Texture.Depth->Filter = Texture.Sdf->Filter = TextureFilter::TF_Bilinear;
+	}
 	if(M_RenderTargetComponent == nullptr)
 		FindFootPrintTargetComponent();
 	if(M_RenderTargetComponent == nullptr) return;

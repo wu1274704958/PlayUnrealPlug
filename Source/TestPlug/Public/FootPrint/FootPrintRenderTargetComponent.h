@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "FootPrintRenderTargetComponent.generated.h"
 
 
@@ -52,7 +53,12 @@ public:
 		return M_RenderTargetSize;
 	}
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
-	EPixelFormat RenderTargetFormat() const
+	FVector2D RenderTargetSizeWithScale() const
+	{
+		return M_RenderTargetSize * RenderTargetSizeScale;
+	}
+	UFUNCTION(BlueprintCallable, Category = "FootPrint")
+	ETextureRenderTargetFormat RenderTargetFormat() const
 	{
 		return M_RenderTargetFormat;
 	}
@@ -68,9 +74,11 @@ public:
 	}
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
 	float GetZeroPlaneDepth() const { return FootPrintZeroPlaneDepth;}
+	UFUNCTION(BlueprintCallable, Category = "FootPrint")
+	float GetRenderTargetSizeScale() const { return RenderTargetSizeScale;}
 protected:
 	UPROPERTY(EditAnywhere, Category="FootPrint")
-	TEnumAsByte<EPixelFormat> M_RenderTargetFormat = EPixelFormat::PF_G16; 
+	TEnumAsByte<ETextureRenderTargetFormat> M_RenderTargetFormat = ETextureRenderTargetFormat::RTF_RG16f; 
 	UPROPERTY(EditAnywhere,Category= "FootPrint")
 	UTextureRenderTarget2D* M_RenderTarget;
 	UPROPERTY(VisibleAnywhere,Category= "FootPrint")
@@ -90,6 +98,8 @@ protected:
 	float M_RegionZOffset = 0.0f;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float FootPrintZeroPlaneDepth = 0.3f;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	float RenderTargetSizeScale = 1.0f;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bDrawRegion = false;

@@ -50,6 +50,7 @@ void MainPS(
 	float angle1 = acos(dot(normalize(UB),normalize(TB)));
 	float len = length(UB);
 	float2 uv2 = float2(len * sin(angle1),len * cos(angle1)) / SizeAndPivot.xy;
-	OutColor = Texture2DSample(DepthTexture,DepthSampler, FlipUV(uv2));
+	OutColor.r = Texture2DSample(DepthTexture,DepthSampler, FlipUV(uv2)).r;
+	OutColor.g = Texture2DSample(SdfTexture,SdfSampler, FlipUV(uv2)).r;
 	//OutColor.a = ZeroPlaneDepth * OutColor.a;
 }

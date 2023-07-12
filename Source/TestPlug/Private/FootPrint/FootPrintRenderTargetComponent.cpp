@@ -9,6 +9,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "FootPrint/FootPrintComponent.h"
 #include "FootPrintRender/FootPrintRenderShaderModel.h"
+#include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 
@@ -36,8 +37,8 @@ void UFootPrintRenderTargetComponent::ClearRenderTarget(UTextureRenderTarget2D* 
 
 void UFootPrintRenderTargetComponent::CheckInitialization()
 {
-	M_RegionBounds.BoxExtent.X = M_RenderTargetSize.X / 2.f;
-	M_RegionBounds.BoxExtent.Y = M_RenderTargetSize.Y / 2.f;
+	M_RegionBounds.BoxExtent.X = M_RenderTargetSize.X * 0.5f * RenderTargetSizeScale;
+	M_RegionBounds.BoxExtent.Y = M_RenderTargetSize.Y * 0.5f * RenderTargetSizeScale;
 	UpdateMaterialParameters(M_CopyMaterialInstance != nullptr);
 	if(M_CopyMaterialInstance == nullptr)
 		CreateMaterialInstance();
@@ -48,7 +49,7 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
 	M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
-	M_RenderTarget->Filter = TextureFilter::TF_Trilinear;
+	//M_RenderTarget->Filter = TextureFilter::TF_Trilinear;
 	M_RenderTarget->ClearColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
 	ClearRenderTarget(M_RenderTarget);
 }
@@ -68,7 +69,7 @@ void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosit
 			Vectors[M_MaterialParameterCollectionIndex].ParameterName = TEXT("FootPrintTargetPosition");
 			Vectors[M_MaterialParameterCollectionIndex + 1].ParameterName = TEXT("FootPrintTargetSize");
 			Vectors[M_MaterialParameterCollectionIndex].DefaultValue = FLinearColor(Pos);
-			Vectors[M_MaterialParameterCollectionIndex + 1].DefaultValue = FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,FootPrintZeroPlaneDepth,0.0f);
+			Vectors[M_MaterialParameterCollectionIndex + 1].DefaultValue = FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,FootPrintZeroPlaneDepth,RenderTargetSizeScale);
 		}
 		M_MaterialParameterCollection->PreEditChange(nullptr);
 		M_MaterialParameterCollection->PostEditChange();
@@ -140,7 +141,8 @@ FVector UFootPrintRenderTargetComponent::GetLastPosition() const
 
 void UFootPrintRenderTargetComponent::CreateRenderTarget(const TCHAR* Name, UTextureRenderTarget2D*& RenderTarget)
 {
-	RenderTarget = NewObject<UTextureRenderTarget2D>(this,  Name);
-	RenderTarget->InitCustomFormat(M_RenderTargetSize.X,M_RenderTargetSize.Y,M_RenderTargetFormat,false);
-	RenderTarget->UpdateResourceImmediate();
+	RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, M_RenderTargetSize.X,M_RenderTargetSize.Y, M_RenderTargetFormat);
+	RenderTarget->AddressX = TextureAddress::TA_Clamp;
+	RenderTarget->AddressY = TextureAddress::TA_Clamp;
+	RenderTarget->bAutoGenerateMips = false;
 }
