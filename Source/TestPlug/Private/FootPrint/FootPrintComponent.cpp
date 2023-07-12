@@ -110,7 +110,7 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast,int DrawIndex)
 		{
 			if( M_RenderTargetComponent->IsInRegion(printLocation))
 			{
-				const auto pos = FVector2D(printLocation - M_RenderTargetComponent->GetLastPosition());
+				const auto pos = FVector2D(printLocation - M_RenderTargetComponent->GetLastPosition()) / M_RenderTargetComponent->GetRenderTargetSizeScale();
 				DrawFootPrintWithPosition(-pos,DrawIndex);
 				//UE_LOG(W_FootPrint, Warning, TEXT("%s InRegion draw foot print pos: %s"), *GetName(),*pos.ToString());
 			}
