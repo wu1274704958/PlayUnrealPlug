@@ -86,11 +86,22 @@ void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FLinearColo
 	});
 }
 
-void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,
+FORCEINLINE void SetBlendMode_RenderThread(FGraphicsPipelineStateInitializer& GraphicsPSOInit,EFootPrintBlendMode BlendMode)
+{
+	switch (BlendMode)
+	{
+	case FPBM_Add: GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_One,BF_One,BO_Add,BF_One,BF_One>::GetRHI(); break;
+	case FPBM_Max: GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Max,BF_One,BF_One,BO_Max,BF_One,BF_One>::GetRHI(); break;
+	default: GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();break;
+	}
+}
+
+void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
-	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth](FRHICommandListImmediate& RHICmdList)
+	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth,
+		BlendMode](FRHICommandListImmediate& RHICmdList)
 	{
 		FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
 		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::SRVMask,ERHIAccess::RTV));
@@ -105,7 +116,7 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 			FGraphicsPipelineStateInitializer GraphicsPSOInit;
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
-			GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_One,BF_One,BO_Add,BF_One,BF_One>::GetRHI();
+			SetBlendMode_RenderThread(GraphicsPSOInit,BlendMode);
 			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid,CM_None>::GetRHI();
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false,CF_Always>::GetRHI();
 			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
@@ -134,13 +145,14 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 }
 
 void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FVector PosAndRotate,
-                                   FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,
+                                   FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
                                    FTextureRenderTargetResource* OutTextureRenderTargetResource,
                                    ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
 	RenderScope.EnqueueRenderCommand(
-		[Offset,InCopyTexture,PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth](
+		[Offset,InCopyTexture,PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth,
+			BlendMode](
 		FRHICommandListImmediate& RHICmdList)
 		{
 			FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
@@ -176,7 +188,7 @@ void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FV
 
 				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = DrawVertexShader.GetVertexShader();
 				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = DrawPixelShader.GetPixelShader();
-				GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA,BO_Add,BF_One,BF_One,BO_Add,BF_One,BF_One>::GetRHI();
+				SetBlendMode_RenderThread(GraphicsPSOInit, BlendMode);
 				
 				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 				FVector RPosAndRotate(

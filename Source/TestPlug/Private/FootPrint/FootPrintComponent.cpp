@@ -6,7 +6,6 @@
 
 #include "CanvasItem.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "FootPrintRender/FootPrintRenderShaderModel.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(W_FootPrint);
@@ -48,7 +47,8 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast,int DrawIndex) const
 		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
 		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
 		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
-		M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+		M_RenderTargetComponent->GetZeroPlaneDepth(),BlendMode,
+		M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos,int DrawIndex) const
@@ -62,7 +62,8 @@ void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos,int DrawIndex)
 		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
 		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
 		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
-		M_RenderTargetComponent->GetZeroPlaneDepth(),M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+		M_RenderTargetComponent->GetZeroPlaneDepth(),BlendMode,
+		M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::FindFootPrintTargetComponent()
@@ -100,6 +101,16 @@ void UFootPrintComponent::CheckCreateBrush()
 	// }
 }
 
+void UFootPrintComponent::InitializeFootPrintTexture() const
+{
+	for(const auto& Texture : M_DrawPrintTextures)
+	{
+		Texture.Depth->AddressX = Texture.Depth->AddressY = TextureAddress::TA_Clamp;
+		Texture.Sdf->AddressX = Texture.Sdf->AddressY = TextureAddress::TA_Clamp;
+		Texture.Depth->Filter = Texture.Sdf->Filter = M_RenderTargetComponent->GetFootPrintTextureFilter();
+	}
+}
+
 void UFootPrintComponent::DrawFootPrint(bool bDrawLast,int DrawIndex)
 {
 	if(M_RenderTargetComponent && DrawIndex >= 0 && DrawIndex < M_DrawPrintTextures.Num() && M_DrawPrintTextures[DrawIndex].Depth && M_DrawPrintTextures[DrawIndex].Sdf )
@@ -131,15 +142,10 @@ void UFootPrintComponent::DrawFootPrint(bool bDrawLast,int DrawIndex)
 void UFootPrintComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	for(const auto& Texture : M_DrawPrintTextures)
-	{
-		Texture.Depth->AddressX = Texture.Depth->AddressY = TextureAddress::TA_Clamp;
-		Texture.Sdf->AddressX = Texture.Sdf->AddressY = TextureAddress::TA_Clamp;
-		//Texture.Depth->Filter = Texture.Sdf->Filter = TextureFilter::TF_Bilinear;
-	}
 	if(M_RenderTargetComponent == nullptr)
 		FindFootPrintTargetComponent();
 	if(M_RenderTargetComponent == nullptr) return;
+	InitializeFootPrintTexture();
 	M_RenderTargetComponent->CheckInitialization();
 	M_RenderTargetComponent->SetLastPosition(this->GetFootPrintLocation());
 	CreateMaterialInstance();

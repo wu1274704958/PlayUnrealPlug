@@ -49,8 +49,9 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
 	M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
-	//M_RenderTarget->Filter = TextureFilter::TF_Trilinear;
+	M_RenderTarget->Filter = M_RenderTarget->MipsSamplerFilter = GetFootPrintTextureFilter();
 	M_RenderTarget->ClearColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
+	M_RenderTarget->bAutoGenerateMips = false;
 	ClearRenderTarget(M_RenderTarget);
 }
 
@@ -142,8 +143,9 @@ FVector UFootPrintRenderTargetComponent::GetLastPosition() const
 
 void UFootPrintRenderTargetComponent::CreateRenderTarget(const TCHAR* Name, UTextureRenderTarget2D*& RenderTarget)
 {
-	RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, M_RenderTargetSize.X,M_RenderTargetSize.Y, M_RenderTargetFormat);
+	RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, M_RenderTargetSize.X,M_RenderTargetSize.Y, M_RenderTargetFormat,FLinearColor(0.0f,0.0f,0.0f,0.0f));
 	RenderTarget->AddressX = TextureAddress::TA_Clamp;
 	RenderTarget->AddressY = TextureAddress::TA_Clamp;
+	RenderTarget->Filter = RenderTarget->MipsSamplerFilter = GetFootPrintTextureFilter();
 	RenderTarget->bAutoGenerateMips = false;
 }

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "FootPrintRenderTargetComponent.h"
 #include "Components/ActorComponent.h"
-#include "Engine/TextureRenderTarget.h"
+#include "FootPrintRender/FootPrintRenderShaderModel.h"
 #include "FootPrintComponent.generated.h"
 
 //define ue log FootPrint
@@ -40,6 +40,7 @@ protected:
 	void DrawFootPrintWithPosition(FVector2D offset,int DrawIndex) const;
 	void FindFootPrintTargetComponent();
 	void CheckCreateBrush();
+	void InitializeFootPrintTexture() const;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual FVector GetFootPrintLocation() const;
@@ -76,6 +77,8 @@ protected:
 	bool bBeginPlayDraw = true;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bCheckInTargetRegion = false;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	TEnumAsByte<EFootPrintBlendMode> BlendMode = EFootPrintBlendMode::FPBM_Max;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bAdjustFootPrint = false;

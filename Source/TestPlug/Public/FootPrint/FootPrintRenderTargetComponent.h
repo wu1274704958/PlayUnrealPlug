@@ -76,6 +76,8 @@ public:
 	float GetZeroPlaneDepth() const { return FootPrintZeroPlaneDepth;}
 	UFUNCTION(BlueprintCallable, Category = "FootPrint")
 	float GetRenderTargetSizeScale() const { return RenderTargetSizeScale;}
+	UFUNCTION(BlueprintCallable, Category = "FootPrint")
+	TextureFilter GetFootPrintTextureFilter() const { return FootPrintTextureFilter;}
 protected:
 	UPROPERTY(EditAnywhere, Category="FootPrint")
 	TEnumAsByte<ETextureRenderTargetFormat> M_RenderTargetFormat = ETextureRenderTargetFormat::RTF_RG16f; 
@@ -100,6 +102,8 @@ protected:
 	float FootPrintZeroPlaneDepth = 0.3f;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	float RenderTargetSizeScale = 1.0f;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	TEnumAsByte<TextureFilter> FootPrintTextureFilter = TF_Nearest;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bDrawRegion = false;

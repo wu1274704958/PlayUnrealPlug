@@ -68,11 +68,21 @@ public:
 	LAYOUT_FIELD(FShaderParameter,ZeroPlaneDepth);
 };
 
+UENUM()
+enum EFootPrintBlendMode
+{
+	FPBM_Add UMETA(DisplayName="Add"),
+	FPBM_Max UMETA(DisplayName="Max"),
+	FPBM_MAX,
+};
+
 DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
 DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FLinearColor InSubtractColor,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
 void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,
+	EFootPrintBlendMode BlendMode,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
 void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,
-	float zeroPlaneDepth,FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);
+	float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
+	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);
