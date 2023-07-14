@@ -43,16 +43,21 @@ void UFootPrintRenderTargetComponent::CheckInitialization()
 	if(M_CopyMaterialInstance == nullptr)
 		CreateMaterialInstance();
 	if(M_RenderTarget == nullptr)
+	{
 		CreateRenderTarget(TEXT("FootPrintRenderTarget"),M_RenderTarget);
-	else if(M_RenderTarget->SizeX != M_RenderTargetSize.X || M_RenderTarget->SizeY != M_RenderTargetSize.Y)
-		M_RenderTarget->ResizeTarget(M_RenderTargetSize.X,M_RenderTargetSize.Y);
+	}else
+	{
+		M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
+		M_RenderTarget->Filter = M_RenderTarget->MipsSamplerFilter = GetFootPrintTextureFilter();
+		M_RenderTarget->ClearColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
+		M_RenderTarget->bAutoGenerateMips = false;
+		if(M_RenderTarget->SizeX != M_RenderTargetSize.X || M_RenderTarget->SizeY != M_RenderTargetSize.Y)
+			M_RenderTarget->ResizeTarget(M_RenderTargetSize.X,M_RenderTargetSize.Y);
+		M_RenderTarget->UpdateResource();
+		ClearRenderTarget(M_RenderTarget);
+	}
 	if(M_RenderTargetCopy == nullptr)
 		CreateRenderTarget(TEXT("FootPrintRenderTargetCopy"),M_RenderTargetCopy);
-	M_RenderTarget->AddressX = M_RenderTarget->AddressY = TextureAddress::TA_Clamp;
-	M_RenderTarget->Filter = M_RenderTarget->MipsSamplerFilter = GetFootPrintTextureFilter();
-	M_RenderTarget->ClearColor = FLinearColor(0.0f,0.0f,0.0f,0.0f);
-	M_RenderTarget->bAutoGenerateMips = false;
-	ClearRenderTarget(M_RenderTarget);
 }
 
 void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosition)
@@ -148,4 +153,5 @@ void UFootPrintRenderTargetComponent::CreateRenderTarget(const TCHAR* Name, UTex
 	RenderTarget->AddressY = TextureAddress::TA_Clamp;
 	RenderTarget->Filter = RenderTarget->MipsSamplerFilter = GetFootPrintTextureFilter();
 	RenderTarget->bAutoGenerateMips = false;
+	RenderTarget->UpdateResource();
 }
