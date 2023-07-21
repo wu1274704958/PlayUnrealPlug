@@ -149,5 +149,5 @@ void MainPS(
 	 	PerlinNoise(float3(FlipUV(uv2) * NoiseAndZeroPlaneDepth.x,NoiseAndZeroPlaneDepth.z)) * NoiseAndZeroPlaneDepth.y) * f;
 	//OutColor.r += cos(v * EdgeValue.x + EdgeValue.z) * EdgeValue.y  * f;
 	OutColor.g += 0.5f * f;
-	OutColor.g += 1.0f * (1.0f - step(1.0f,f));
+	OutColor.g += 1.0f * (1.0f - step(1.0f,f)) *  step(0.001f,OutColor.r);
 }
