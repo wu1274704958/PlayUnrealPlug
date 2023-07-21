@@ -33,7 +33,8 @@ DrawTextureShader::DrawTextureShader(const ShaderMetaType::CompiledShaderInitial
 	DepthSampler.Bind(Initializer.ParameterMap, TEXT("DepthSampler"));
 	SdfTexture.Bind(Initializer.ParameterMap, TEXT("SdfTexture"));
 	SdfSampler.Bind(Initializer.ParameterMap, TEXT("SdfSampler"));
-	ZeroPlaneDepth.Bind(Initializer.ParameterMap, TEXT("ZeroPlaneDepth"));
+	NoiseAndZeroPlaneDepth.Bind(Initializer.ParameterMap, TEXT("NoiseAndZeroPlaneDepth"));
+	EdgeValue.Bind(Initializer.ParameterMap, TEXT("EdgeValue"));
 }
 bool DrawTextureShader::ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 {
@@ -96,12 +97,10 @@ FORCEINLINE void SetBlendMode_RenderThread(FGraphicsPipelineStateInitializer& Gr
 	}
 }
 
-void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
-	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel)
+void DrawTexture_GameThread(const FDrawFootPrintModel& DrawFootPrintModel,FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
-	RenderScope.EnqueueRenderCommand([PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth,
-		BlendMode](FRHICommandListImmediate& RHICmdList)
+	RenderScope.EnqueueRenderCommand([DrawFootPrintModel,OutTextureRenderTargetResource,FeatureLevel](FRHICommandListImmediate& RHICmdList)
 	{
 		FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
 		RHICmdList.Transition(FRHITransitionInfo(RT,ERHIAccess::SRVMask,ERHIAccess::RTV));
@@ -116,7 +115,7 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 			FGraphicsPipelineStateInitializer GraphicsPSOInit;
 			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
 			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
-			SetBlendMode_RenderThread(GraphicsPSOInit,BlendMode);
+			SetBlendMode_RenderThread(GraphicsPSOInit,DrawFootPrintModel.BlendMode);
 			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid,CM_None>::GetRHI();
 			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false,CF_Always>::GetRHI();
 			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GetVertexDeclarationFVector4();
@@ -126,16 +125,20 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 
 			RHICmdList.SetViewport(0,0,0,RT->GetSizeX(),RT->GetSizeY(),1);
 			FVector RPosAndRotate(
-				PosAndRotate.X / static_cast<float>(RT->GetSizeX()),
-				PosAndRotate.Y / static_cast<float>(RT->GetSizeY()),
-				PosAndRotate.Z);
+				DrawFootPrintModel.PosAndRotate.X / static_cast<float>(RT->GetSizeX()),
+				DrawFootPrintModel.PosAndRotate.Y / static_cast<float>(RT->GetSizeY()),
+				DrawFootPrintModel.PosAndRotate.Z);
 			FVector4 RSizeAndPivot(
-				InSizeAndPivot.X / static_cast<float>(RT->GetSizeX()),
-				InSizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
-				InSizeAndPivot.Z,
-				InSizeAndPivot.W);
-			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),RPosAndRotate,RSizeAndPivot,InDepthTexture,InSdfTexture,zeroPlaneDepth);
-			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),RPosAndRotate,RSizeAndPivot,InDepthTexture,InSdfTexture,zeroPlaneDepth);
+				DrawFootPrintModel.SizeAndPivot.X / static_cast<float>(RT->GetSizeX()),
+				DrawFootPrintModel.SizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
+				DrawFootPrintModel.SizeAndPivot.Z,
+				DrawFootPrintModel.SizeAndPivot.W);
+			VertexShader->SetParameters(RHICmdList,VertexShader.GetVertexShader(),RPosAndRotate,RSizeAndPivot,
+				DrawFootPrintModel.DepthTexture,DrawFootPrintModel.SdfTexture,DrawFootPrintModel.NoiseAndZeroPlaneDepth,
+				DrawFootPrintModel.EdgeValue1);
+			PixelShader->SetParameters(RHICmdList,PixelShader.GetPixelShader(),RPosAndRotate,RSizeAndPivot,
+				DrawFootPrintModel.DepthTexture,DrawFootPrintModel.SdfTexture,DrawFootPrintModel.NoiseAndZeroPlaneDepth,
+				DrawFootPrintModel.EdgeValue1);
 
 			RHICmdList.DrawPrimitive(0,2,0);
 		}
@@ -144,15 +147,13 @@ void DrawTexture_GameThread(FVector PosAndRotate, FVector4 InSizeAndPivot, FText
 	});
 }
 
-void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FVector PosAndRotate,
-                                   FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
+void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture,const FDrawFootPrintModel& Model,
                                    FTextureRenderTargetResource* OutTextureRenderTargetResource,
                                    ERHIFeatureLevel::Type FeatureLevel)
 {
 	FRenderThreadScope RenderScope;
 	RenderScope.EnqueueRenderCommand(
-		[Offset,InCopyTexture,PosAndRotate,InSizeAndPivot,InDepthTexture,InSdfTexture,OutTextureRenderTargetResource,FeatureLevel,zeroPlaneDepth,
-			BlendMode](
+		[Offset,InCopyTexture,Model,OutTextureRenderTargetResource,FeatureLevel](
 		FRHICommandListImmediate& RHICmdList)
 		{
 			FRHITexture2D* RT = OutTextureRenderTargetResource->GetRenderTargetTexture();
@@ -188,22 +189,22 @@ void DrawAndCopyTexture_GameThread(FVector2D Offset, FTexture* InCopyTexture, FV
 
 				GraphicsPSOInit.BoundShaderState.VertexShaderRHI = DrawVertexShader.GetVertexShader();
 				GraphicsPSOInit.BoundShaderState.PixelShaderRHI = DrawPixelShader.GetPixelShader();
-				SetBlendMode_RenderThread(GraphicsPSOInit, BlendMode);
+				SetBlendMode_RenderThread(GraphicsPSOInit, Model.BlendMode);
 				
 				SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 				FVector RPosAndRotate(
-					PosAndRotate.X / static_cast<float>(RT->GetSizeX()),
-					PosAndRotate.Y / static_cast<float>(RT->GetSizeY()),
-					PosAndRotate.Z);
+					Model.PosAndRotate.X / static_cast<float>(RT->GetSizeX()),
+					Model.PosAndRotate.Y / static_cast<float>(RT->GetSizeY()),
+					Model.PosAndRotate.Z);
 				FVector4 RSizeAndPivot(
-					InSizeAndPivot.X / static_cast<float>(RT->GetSizeX()),
-					InSizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
-					InSizeAndPivot.Z,
-					InSizeAndPivot.W);
+					Model.SizeAndPivot.X / static_cast<float>(RT->GetSizeX()),
+					Model.SizeAndPivot.Y / static_cast<float>(RT->GetSizeY()),
+					Model.SizeAndPivot.Z,
+					Model.SizeAndPivot.W);
 				DrawVertexShader->SetParameters(RHICmdList, DrawVertexShader.GetVertexShader(), RPosAndRotate,
-				                                RSizeAndPivot, InDepthTexture,InSdfTexture,zeroPlaneDepth);
+				                                RSizeAndPivot, Model.DepthTexture,Model.SdfTexture,Model.NoiseAndZeroPlaneDepth,Model.EdgeValue1);
 				DrawPixelShader->SetParameters(RHICmdList, DrawPixelShader.GetPixelShader(), RPosAndRotate,
-				                               RSizeAndPivot, InDepthTexture,InSdfTexture,zeroPlaneDepth);
+				                               RSizeAndPivot, Model.DepthTexture,Model.SdfTexture,Model.NoiseAndZeroPlaneDepth,Model.EdgeValue1);
 
 				//draw texture
 				RHICmdList.DrawPrimitive(0, 2, 0);

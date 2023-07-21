@@ -79,6 +79,10 @@ protected:
 	bool bCheckInTargetRegion = false;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	TEnumAsByte<EFootPrintBlendMode> BlendMode = EFootPrintBlendMode::FPBM_Max;
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	FVector4 EdgeValue1 = FVector4(3.141593f,0.5f,0.0f,3.0f);
+	UPROPERTY(EditAnywhere,Category="FootPrint")
+	FVector NoiseValue;
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bAdjustFootPrint = false;

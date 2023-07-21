@@ -51,13 +51,14 @@ public:
 	template <typename TShaderRHIParamRef>
 	void SetParameters(FRHICommandListImmediate& RHICmdList,const TShaderRHIParamRef ShaderRHI,FVector PosAndRotate,FVector4 InSizeAndPivot,
 		FTexture* InDepthTexture,
-		FTexture* InSdfTexture,float zeroPlaneDepth)
+		FTexture* InSdfTexture,FVector4 InNoiseAndZeroPlaneDepth,FVector4 InEdgeValue1)
 	{
 		SetShaderValue(RHICmdList, ShaderRHI, PositionAndRotate, PosAndRotate);
 		SetShaderValue(RHICmdList, ShaderRHI, SizeAndPivot, InSizeAndPivot);
 		SetTextureParameter(RHICmdList, ShaderRHI,DepthTexture,DepthSampler,InDepthTexture);
 		SetTextureParameter(RHICmdList,ShaderRHI,SdfTexture,SdfSampler,InSdfTexture);
-		SetShaderValue(RHICmdList, ShaderRHI, ZeroPlaneDepth, zeroPlaneDepth);
+		SetShaderValue(RHICmdList, ShaderRHI, NoiseAndZeroPlaneDepth, InNoiseAndZeroPlaneDepth);
+		SetShaderValue(RHICmdList, ShaderRHI, EdgeValue, InEdgeValue1);
 	}
 	LAYOUT_FIELD(FShaderResourceParameter, DepthTexture);
 	LAYOUT_FIELD(FShaderResourceParameter, DepthSampler);
@@ -65,7 +66,8 @@ public:
 	LAYOUT_FIELD(FShaderResourceParameter, SdfSampler);
 	LAYOUT_FIELD(FShaderParameter,PositionAndRotate);
 	LAYOUT_FIELD(FShaderParameter,SizeAndPivot);
-	LAYOUT_FIELD(FShaderParameter,ZeroPlaneDepth);
+	LAYOUT_FIELD(FShaderParameter,NoiseAndZeroPlaneDepth);
+	LAYOUT_FIELD(FShaderParameter,EdgeValue);
 };
 
 UENUM()
@@ -76,13 +78,21 @@ enum EFootPrintBlendMode
 	FPBM_MAX,
 };
 
+struct FDrawFootPrintModel
+{
+	FVector PosAndRotate;
+	FVector4 SizeAndPivot;
+	FTexture* DepthTexture;
+	FTexture* SdfTexture;
+	FVector4 NoiseAndZeroPlaneDepth;
+	EFootPrintBlendMode BlendMode;
+	FVector4 EdgeValue1;
+};
+
 DECLARE_SHADER_BY_BASE(VS, DrawTextureShader);
 DECLARE_SHADER_BY_BASE(PS, DrawTextureShader);
 void DrawCopyTexture_GameThread(FVector2D Offset,FTexture* InTexture,FLinearColor InSubtractColor,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawTexture_GameThread(FVector PosAndRotate,FVector4 InSizeAndPivot,FTexture* InDepthTexture,FTexture* InSdfTexture,float zeroPlaneDepth,
-	EFootPrintBlendMode BlendMode,
-	FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
-void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,FVector PosAndRotate, FVector4 InSizeAndPivot, FTexture* InDepthTexture,FTexture* InSdfTexture,
-	float zeroPlaneDepth,EFootPrintBlendMode BlendMode,
+void DrawTexture_GameThread(const FDrawFootPrintModel& DrawFootPrintModel,FTextureRenderTargetResource* OutTextureRenderTargetResource,ERHIFeatureLevel::Type FeatureLevel);
+void DrawAndCopyTexture_GameThread(FVector2D Offset,FTexture* InCopyTexture,const FDrawFootPrintModel& DrawFootPrintModel,
 	FTextureRenderTargetResource* OutTextureRenderTargetResource, ERHIFeatureLevel::Type FeatureLevel);

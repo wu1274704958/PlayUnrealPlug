@@ -42,12 +42,15 @@ void UFootPrintComponent::DrawFootPrintReal(bool bDrawLast,int DrawIndex) const
 	const auto RenderTargetSize = M_RenderTargetComponent->RenderTargetSize();
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
 	const FVector2D PrintSize = FVector2D(M_DrawFootPrintOffsetAndSize.Z,M_DrawFootPrintOffsetAndSize.W);
-	DrawAndCopyTexture_GameThread(FVector2D(0.f,0.f),M_RenderTargetComponent->RenderTargetCopy()->GetResource(),
-		FVector(RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),CalcFootPrintRotation() + RotateOffset),
-		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
-		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
-		M_RenderTargetComponent->GetZeroPlaneDepth(),BlendMode,
+	FDrawFootPrintModel DrawModel;
+	DrawModel.DepthTexture = M_DrawPrintTextures[DrawIndex].Depth->GetResource();
+	DrawModel.SdfTexture = M_DrawPrintTextures[DrawIndex].Sdf->GetResource();
+	DrawModel.PosAndRotate = FVector(RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y),CalcFootPrintRotation() + RotateOffset);
+	DrawModel.SizeAndPivot = FVector4(PrintSize * FootPrintScale,PivotPointOffset);
+	DrawModel.BlendMode = BlendMode;
+	DrawModel.NoiseAndZeroPlaneDepth = FVector4(NoiseValue, M_RenderTargetComponent->GetZeroPlaneDepth());
+	DrawModel.EdgeValue1 = EdgeValue1;
+	DrawAndCopyTexture_GameThread(FVector2D(0.f,0.f),M_RenderTargetComponent->RenderTargetCopy()->GetResource(),DrawModel,
 		M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
@@ -58,12 +61,15 @@ void UFootPrintComponent::DrawFootPrintWithPosition(FVector2D pos,int DrawIndex)
 	const auto FootPrintScale = FVector2D(GetFootPrintScale());
 
 	const auto Pos = RenderTargetSize * 0.5f + FVector2D(M_DrawFootPrintOffsetAndSize.X,M_DrawFootPrintOffsetAndSize.Y) + pos;
-	DrawTexture_GameThread(FVector(Pos,CalcFootPrintRotation() + RotateOffset),
-		FVector4(PrintSize * FootPrintScale,PivotPointOffset),
-		M_DrawPrintTextures[DrawIndex].Depth->GetResource(),
-		M_DrawPrintTextures[DrawIndex].Sdf->GetResource(),
-		M_RenderTargetComponent->GetZeroPlaneDepth(),BlendMode,
-		M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
+	FDrawFootPrintModel DrawModel;
+	DrawModel.DepthTexture = M_DrawPrintTextures[DrawIndex].Depth->GetResource();
+	DrawModel.SdfTexture = M_DrawPrintTextures[DrawIndex].Sdf->GetResource();
+	DrawModel.PosAndRotate = FVector(Pos,CalcFootPrintRotation() + RotateOffset);
+	DrawModel.SizeAndPivot = FVector4(PrintSize * FootPrintScale,PivotPointOffset);
+	DrawModel.BlendMode = BlendMode;
+	DrawModel.NoiseAndZeroPlaneDepth = FVector4(NoiseValue, M_RenderTargetComponent->GetZeroPlaneDepth());
+	DrawModel.EdgeValue1 = EdgeValue1;
+	DrawTexture_GameThread(DrawModel,M_RenderTargetComponent->RenderTarget()->GameThread_GetRenderTargetResource(),GMaxRHIFeatureLevel);
 }
 
 void UFootPrintComponent::FindFootPrintTargetComponent()
