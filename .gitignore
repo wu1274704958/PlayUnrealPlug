@@ -61,3 +61,5 @@ Security
 # Rider
 /Plugins/Developer/RiderLink/Intermediate/**
 /Plugins/Developer/RiderLink/Binaries/**
+
+!/imgs/**
