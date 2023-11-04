@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/MeshComponent.h"
-#include "CustomComponent/Private/Core.h"
 #include "MyMeshComponent.generated.h"
 
 
@@ -68,10 +67,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	FBoxSphereBounds LocalBounds;
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere)
 	bool bShowBounds;
 #endif 
-	friend class FCustomMeshSceneProxy;
+	friend class FMyCustomMeshSceneProxy;
 };
 

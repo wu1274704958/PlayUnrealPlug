@@ -11,7 +11,7 @@
 #include "FootPrintRender/FootPrintRenderShaderModel.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Materials/MaterialParameterCollection.h"
+#include "Kismet/KismetMaterialLibrary.h"
 
 
 // Sets default values for this component's properties
@@ -65,6 +65,7 @@ void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosit
 	const auto Pos = GetLastPosition();
 	if(M_MaterialParameterCollection != nullptr)
 	{
+#if WITH_EDITOR
 		auto& Vectors = M_MaterialParameterCollection->VectorParameters;
 		if(Vectors.Num() < static_cast<int32_t>(M_MaterialParameterCollectionIndex) + 2)
 			Vectors.AddDefaulted(M_MaterialParameterCollectionIndex + 2);
@@ -77,8 +78,19 @@ void UFootPrintRenderTargetComponent::UpdateMaterialParameters(bool OnlySetPosit
 			Vectors[M_MaterialParameterCollectionIndex].DefaultValue = FLinearColor(Pos);
 			Vectors[M_MaterialParameterCollectionIndex + 1].DefaultValue = FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,FootPrintZeroPlaneDepth,RenderTargetSizeScale);
 		}
+
 		M_MaterialParameterCollection->PreEditChange(nullptr);
 		M_MaterialParameterCollection->PostEditChange();
+#else
+		if(OnlySetPosition)
+			UKismetMaterialLibrary::SetVectorParameterValue(GetWorld(),M_MaterialParameterCollection,TEXT("FootPrintTargetPosition"),Pos);
+		else
+		{
+			UKismetMaterialLibrary::SetVectorParameterValue(GetWorld(),M_MaterialParameterCollection,TEXT("FootPrintTargetPosition"),Pos);
+			UKismetMaterialLibrary::SetVectorParameterValue(GetWorld(),M_MaterialParameterCollection,TEXT("FootPrintTargetSize"),
+				FLinearColor(M_RenderTargetSize.X,M_RenderTargetSize.Y,FootPrintZeroPlaneDepth,RenderTargetSizeScale));
+		}
+#endif
 	}
 }
 

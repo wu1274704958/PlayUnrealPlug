@@ -4,6 +4,7 @@
 #include "MyMeshComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include "Core.h"
 #include "Chaos/ChaosDebugDraw.h"
 
 FMyMeshSection::FMyMeshSection() : StaticMesh(nullptr), Bounds(FBox(FVector::ZeroVector, FVector::OneVector)), bVisible(false)
@@ -73,7 +74,7 @@ FBoxSphereBounds UMyMeshComponent::CalcBounds(const FTransform& LocalToWorld) co
 FPrimitiveSceneProxy* UMyMeshComponent::CreateSceneProxy()
 {
 	if(!SceneProxy)
-		return new FCustomMeshSceneProxy(this);
+		return new FMyCustomMeshSceneProxy(this);
 	return SceneProxy;
 }
 
@@ -141,7 +142,7 @@ void UMyMeshComponent::SetMeshSectionVisibility(int32 Index, bool Visible)
 		Sections[Index].bVisible = Visible;
 		if(SceneProxy)
 		{
-			FCustomMeshSceneProxy* Proxy = static_cast<FCustomMeshSceneProxy*>(SceneProxy);
+			FMyCustomMeshSceneProxy* Proxy = static_cast<FMyCustomMeshSceneProxy*>(SceneProxy);
 			ENQUEUE_RENDER_COMMAND(FCustomMeshSceneProxy_SetVisibility)(
 				[Proxy, Index, Visible](FRHICommandListImmediate& RHICmdList)
 				{
@@ -164,7 +165,7 @@ int32 UMyMeshComponent::GetNumMaterials() const
 
 void UMyMeshComponent::UpdateSectionPreTransform() const
 {
-	auto Proxy = static_cast<FCustomMeshSceneProxy*>(SceneProxy);
+	auto Proxy = static_cast<FMyCustomMeshSceneProxy*>(SceneProxy);
 	ENQUEUE_RENDER_COMMAND(FMyMeshSection_UpdateSectionPreTransform)(
 		[Proxy](FRHICommandListImmediate& RHICmdList)
 		{
@@ -177,7 +178,7 @@ void UMyMeshComponent::SetSectionPreTransform(int32 Index)
 {
 	if(Index < Sections.Num())
 	{
-		auto Proxy = static_cast<FCustomMeshSceneProxy*>(SceneProxy);
+		auto Proxy = static_cast<FMyCustomMeshSceneProxy*>(SceneProxy);
 		FMatrix SectionPreTransform = Sections[Index].SectionTransform.ToMatrixWithScale();
 		ENQUEUE_RENDER_COMMAND(FMyMeshSection_SetSectionPreTransform)(
 			[Proxy, Index,SectionPreTransform](FRHICommandListImmediate& RHICmdList)

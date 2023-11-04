@@ -6,7 +6,9 @@
 
 IMPLEMENT_GAME_MODULE( FTestPlugModule, TestPlug);
 
-
+#if !WITH_EDITOR
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, FTestPlugModule, "TestPlug");
+#endif
 void FTestPlugModule::StartupModule()
 {
 	IModuleInterface::StartupModule();

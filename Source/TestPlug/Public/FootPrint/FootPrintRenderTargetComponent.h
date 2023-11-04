@@ -104,7 +104,7 @@ protected:
 	float RenderTargetSizeScale = 1.0f;
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	TEnumAsByte<TextureFilter> FootPrintTextureFilter = TF_Nearest;
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere,Category="FootPrint")
 	bool bDrawRegion = false;
 #endif

@@ -4,31 +4,31 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(CustomMesh_Core,Warning,All);
 
-struct FCustomMeshVertexFactory;
-class FCustomMeshSceneProxy;
-class FCustomMeshVertexFactoryShaderParameters;
+struct FMyCustomMeshVertexFactory;
+class FMyCustomMeshSceneProxy;
+class FMyCustomMeshVertexFactoryShaderParameters;
 class UMyMeshComponent;
 struct FMyMeshSection;
 
-struct FCustomMeshVertexFactory : FLocalVertexFactory
+struct FMyCustomMeshVertexFactory : FLocalVertexFactory
 {
-	DECLARE_VERTEX_FACTORY_TYPE(FCustomMeshVertexFactory);
+	DECLARE_VERTEX_FACTORY_TYPE(FMyCustomMeshVertexFactory);
 
-	FCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel)
-		: FLocalVertexFactory(InFeatureLevel, "FCustomMeshVertexFactory"), SceneProxy(nullptr), SectionIndex(0)
+	FMyCustomMeshVertexFactory(ERHIFeatureLevel::Type InFeatureLevel)
+		: FLocalVertexFactory(InFeatureLevel, "FMyCustomMeshVertexFactory"), SceneProxy(nullptr), SectionIndex(0)
 	{}
 
 	virtual void InitRHI() override;
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters);
 	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters,FShaderCompilerEnvironment& OutEnv);
-	void SetSceneProxy(const FCustomMeshSceneProxy* Proxy) { SceneProxy = Proxy; }
-	const FCustomMeshSceneProxy* GetSceneProxy() const { return SceneProxy; }
+	void SetSceneProxy(const FMyCustomMeshSceneProxy* Proxy) { SceneProxy = Proxy; }
+	const FMyCustomMeshSceneProxy* GetSceneProxy() const { return SceneProxy; }
 	uint32 GetSectionIndex() const{return SectionIndex;}
 	void SetSectionIndex(const uint32 _SectionIndex){this->SectionIndex = _SectionIndex;}
 private:
-	const FCustomMeshSceneProxy* SceneProxy;
+	const FMyCustomMeshSceneProxy* SceneProxy;
 	uint32 SectionIndex;
-	friend class FCustomMeshVertexFactoryShaderParameters;
+	friend class FMyCustomMeshVertexFactoryShaderParameters;
 };
 
 class FCustomMeshSectionProxy
@@ -36,13 +36,13 @@ class FCustomMeshSectionProxy
 public:
 	UMaterialInterface* Material;
 	FRawStaticIndexBuffer IndexBuffer;
-	FCustomMeshVertexFactory VertexFactory;
+	FMyCustomMeshVertexFactory VertexFactory;
 	bool bVisible;
 	uint32_t MaxVertexIndex;
 	FCustomMeshSectionProxy(ERHIFeatureLevel::Type InFeatureLevel);
 };
 
-class FCustomMeshSceneProxy final : public FPrimitiveSceneProxy
+class FMyCustomMeshSceneProxy final : public FPrimitiveSceneProxy
 {
 public:
 	virtual SIZE_T GetTypeHash() const override
@@ -54,8 +54,8 @@ public:
 	TSharedPtr<FCustomMeshSectionProxy> CreateSectionProxy(int SectionIndex,const FMyMeshSection& Element,const UMyMeshComponent& Component) const;
 	const FShaderResourceViewRHIRef& GetPreTransformSRV() const { return PreTransformSRV; }
 	void CreatePreSectionTransformSRV();
-	FCustomMeshSceneProxy(UMyMeshComponent* Component);
-	virtual ~FCustomMeshSceneProxy() override;
+	FMyCustomMeshSceneProxy(UMyMeshComponent* Component);
+	virtual ~FMyCustomMeshSceneProxy() override;
 
 	void SetSectionVisibility_RenderThread(int SectionIndex,bool bVisible);
 	void SetSectionPreTransform_RenderThread(int SectionIndex,const FMatrix& PreTransform);
@@ -75,9 +75,9 @@ private:
 	FShaderResourceViewRHIRef PreTransformSRV;
 };
 
-class FCustomMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
+class FMyCustomMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
 {
-	DECLARE_TYPE_LAYOUT(FCustomMeshVertexFactoryShaderParameters, NonVirtual);
+	DECLARE_TYPE_LAYOUT(FMyCustomMeshVertexFactoryShaderParameters, NonVirtual);
 public:
 	void Bind(const FShaderParameterMap& ParameterMap);
 	void GetElementShaderBindings(
