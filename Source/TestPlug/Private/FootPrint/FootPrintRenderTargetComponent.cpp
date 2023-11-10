@@ -12,7 +12,9 @@
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Kismet/KismetMaterialLibrary.h"
-
+#if WITH_EDITOR
+#include "Materials/MaterialParameterCollection.h"
+#endif
 
 // Sets default values for this component's properties
 UFootPrintRenderTargetComponent::UFootPrintRenderTargetComponent()

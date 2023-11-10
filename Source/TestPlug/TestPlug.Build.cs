@@ -10,7 +10,7 @@ public class TestPlug : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","RHI" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore","Text3D","Json" });
 		
 		PublicIncludePaths.AddRange(new string[]
 		{
