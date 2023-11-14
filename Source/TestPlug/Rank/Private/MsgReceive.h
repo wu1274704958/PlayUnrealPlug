@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "memory"
 #include "vector"
-#include "Core/Public/Containers/UnrealString.h"
+#include "Windows/WindowsWindow.h"
 
 struct RankItem
 {
@@ -18,7 +18,11 @@ struct RankMsg
 class MsgReceive
 {
 private:
+	HANDLE hFileMapping = NULL;
 public:
+	bool Init();
+	void UnInit();
+	static void ToWideChar(wchar_t* dst, int len, char* src);
 	std::pair<int64_t,std::unique_ptr<RankMsg>> CheckHasMsg();
 	
 };

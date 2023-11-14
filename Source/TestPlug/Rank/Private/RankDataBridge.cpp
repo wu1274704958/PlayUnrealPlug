@@ -6,7 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/OutputDeviceDebug.h"
 #include "Text3D/Public/Text3DComponent.h"
-
+#include <thread>
 
 
 // Sets default values for this component's properties
@@ -60,7 +60,10 @@ void URankDataBridge::BeginPlay()
 
 	// ...
 	FindAllRankItems();
+#if !WITH_EDITOR
 	ShowAll(false);
+#endif
+	m_MsgReceive.Init();
 }
 
 void URankDataBridge::ShowAll(bool bCond)
@@ -78,13 +81,49 @@ void URankDataBridge::SetItems(const std::vector<RankItem>& Items)
 	int i;
 	for(i = 0;i < Items.size();i++)
 	{
-		if(RankItems[i] == nullptr) continue;
 		if(i >= RankItems.Num()) break;
+		if(RankItems[i] == nullptr) continue;
 		CallSetData(RankItems[i],Items[i].Name,Items[i].Score,Items[i].Icon);
 	}
 	for (;i < RankItems.Num();i++)
 	{
 		RankItems[i]->SetHidden(true);
+	}
+}
+
+void URankDataBridge::PlayItemStartAni() 
+{
+	++PlayStartAniState;
+	if(PlayStartAniState >= RankItems.Num())
+	{
+		PlayStartAniState = -1;
+		return;
+	}
+	FString cmd = TEXT("PlayStartAni");//函数名字 +参数,多个参数要空格
+	FOutputDeviceDebug device;
+	RankItems[PlayStartAniState]->CallFunctionByNameWithArguments(*cmd,device,NULL,true);
+}
+
+void URankDataBridge::CallItemResetPos(AActor* Actor)
+{
+	FString cmd = TEXT("RestRootPos");//函数名字 +参数,多个参数要空格
+	FOutputDeviceDebug device;
+	Actor->CallFunctionByNameWithArguments(*cmd,device,NULL,true);
+}
+
+void URankDataBridge::CallStopItemStartAni(AActor* Actor)
+{
+	FString cmd = TEXT("StopStartAni");//函数名字 +参数,多个参数要空格
+	FOutputDeviceDebug device;
+	Actor->CallFunctionByNameWithArguments(*cmd,device,NULL,true);
+}
+
+void URankDataBridge::CallAllItemResetPos()
+{
+	for (int i = 0;i < RankItems.Num();i++)
+	{
+		CallStopItemStartAni(RankItems[i]);
+		CallItemResetPos(RankItems[i]);
 	}
 }
 
@@ -103,14 +142,23 @@ void URankDataBridge::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				if(msg.first == 0)
 				{
 					ShowAll(true);
+					CallAllItemResetPos();
 					SetTitle(msg.second->Title);
 					SetItems(msg.second->Items);
 					State = 1;
 					CurrShowTime = 0.0f;
+					PlayItemStartAni();
+				}else
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 				break;
 			}
 		case 1:
+			if(PlayStartAniState >= 0 && CurrShowTime >= (PlayStartAniState + 1) * PlayStartAniIntervalTime)
+			{
+				PlayItemStartAni();
+			}
 			if(CurrShowTime >= ShowTime)
 			{
 				ShowAll(false);
@@ -120,5 +168,11 @@ void URankDataBridge::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 			CurrShowTime += DeltaTime;
 			break;
 	} 
+}
+
+void URankDataBridge::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	Super::OnComponentDestroyed(bDestroyingHierarchy);
+	m_MsgReceive.UnInit();
 }
 

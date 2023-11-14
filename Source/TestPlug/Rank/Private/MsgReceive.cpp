@@ -1,50 +1,57 @@
 ﻿#include "MsgReceive.h"
-#include "Windows/WindowsWindow.h"
 
 #define MUTEX_NAME L"SM_Mutex"
 #define FILE_MAP_NAME L"FM_RANK_MSG"
 #define MAX_MSG_SIZE 4096 * 4
 #define FALSE 0
 
-std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
+bool MsgReceive::Init()
 {
-	HANDLE hMutex           = NULL;  
-	HANDLE hFileMapping     = NULL;  
-	LPVOID lpShareMemory    = NULL;  
-	HANDLE hServerWriteOver = NULL;  
-	HANDLE hClientReadOver  = NULL;  
-	std::unique_ptr<RankMsg> msg = nullptr;
-	int64_t ret = 0;
-	hMutex = OpenMutex(MUTEX_ALL_ACCESS,  
-		FALSE,  
-		MUTEX_NAME);
-	if (NULL == hMutex)  
-	{
-		ret = GetLastError();
-		goto END;
-	}
-	if (WaitForSingleObject(hMutex, 30) != WAIT_OBJECT_0) //hMutex 一旦互斥对象处于有信号状态，则该函数返回  
-	{
-		ret = GetLastError();
-		goto END;
-	}
 	hFileMapping = OpenFileMapping(FILE_MAP_ALL_ACCESS,  
 		FALSE,  
 		FILE_MAP_NAME);  
 	if (NULL == hFileMapping)  
 	{  
-		ret = GetLastError();
-		goto END;
-	}  
-  
+		return false;
+	}
+	return true;
+}
+
+void MsgReceive::UnInit()
+{
+	if (NULL != hFileMapping)       CloseHandle(hFileMapping);  
+}
+
+void MsgReceive::ToWideChar(wchar_t* dst, int len, char* src)
+{
+	for(int i = 0;i < len;i += 2)
+	{
+		dst[i / 2] =  src[i + 1] << 8 | src[i];
+	}
+}
+
+std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
+{ 
+	LPVOID lpShareMemory    = NULL;  
+	std::unique_ptr<RankMsg> msg = nullptr;
+	int64_t ret = -2;
+	if(hFileMapping == NULL)
+		Init();
+	if(hFileMapping == NULL)
+		return std::make_pair(-1,nullptr);
+	
 	lpShareMemory = MapViewOfFile(hFileMapping,  
 		FILE_MAP_ALL_ACCESS,  
 		0,  
 		0,  
-		MAX_MSG_SIZE);  
-	if (NULL != lpShareMemory)  
-	{  
-		FString fstr(UTF8_TO_TCHAR(static_cast<char*>(lpShareMemory)));
+		MAX_MSG_SIZE);
+	
+	if (NULL != lpShareMemory && *static_cast<char*>(lpShareMemory) == 1)  
+	{
+		wchar_t buf[MAX_MSG_SIZE - 2] = {0};
+		int n1 = MultiByteToWideChar(CP_ACP, 0,
+		static_cast<char*>(lpShareMemory) + 2, strlen(static_cast<char*>(lpShareMemory) + 2), buf, MAX_MSG_SIZE - 2);
+		FString fstr(buf);
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(fstr);
 		if(!FJsonSerializer::Deserialize(Reader,JsonObject))
@@ -62,18 +69,15 @@ std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
 			item.Score = Items[i]->AsObject()->GetIntegerField("Score");
 			msg->Items.push_back(item);
 		}
+		for(int i = 0;i < MAX_MSG_SIZE;++i)
+		{
+			static_cast<char*>(lpShareMemory)[i] = 0;
+		}
+		if (NULL != lpShareMemory)      UnmapViewOfFile(lpShareMemory);  
 		return std::make_pair(0,std::move(msg));
-	}else
-	{
-		ret = GetLastError();
 	}
-	
-END:
-	//release share memory  
-	if (NULL != hServerWriteOver)   CloseHandle(hServerWriteOver);  
-	if (NULL != hClientReadOver)    CloseHandle(hClientReadOver);  
+	if(NULL == lpShareMemory)
+		ret = GetLastError();
 	if (NULL != lpShareMemory)      UnmapViewOfFile(lpShareMemory);  
-	if (NULL != hFileMapping)       CloseHandle(hFileMapping);  
-	if (NULL != hMutex)             ReleaseMutex(hMutex); 
 	return std::make_pair(ret, nullptr);
 }

@@ -28,9 +28,14 @@ protected:
 public:
 	void ShowAll(bool bCond);
 	void SetItems(const std::vector<RankItem>& Items);
+	void PlayItemStartAni();
+	static void CallItemResetPos(AActor* Actor);
+	static void CallStopItemStartAni(AActor* Actor);
+	void CallAllItemResetPos();
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Rank")
 	TArray<AActor*> RankItems;
@@ -38,9 +43,12 @@ public:
 	UPROPERTY(EditAnywhere,Category="Rank")
 	AText3DActor* Text3D;
 
-	const float ShowTime = 6.0f;
+	const float ShowTime = 9.0f;
 	float CurrShowTime = 0.0f;
 	int State = 0;
+	
+	const float PlayStartAniIntervalTime = 0.5f;
+	int PlayStartAniState = -1;
 
 	MsgReceive m_MsgReceive;
 };
