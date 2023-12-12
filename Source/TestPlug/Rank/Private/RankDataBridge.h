@@ -10,7 +10,7 @@
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class TESTPLUG_API URankDataBridge : public UActorComponent
+class TESTPLUG_API URankDataBridge : public UActorComponent , public ILocalMemMsg
 {
 	GENERATED_BODY()
 
@@ -24,6 +24,7 @@ protected:
 	void CallSetData(AActor* Actor,const FString& name,int score,const FString& icon);
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual bool Parse(int64 id, const TSharedPtr<FJsonObject>& JsonObject) override;
 
 public:
 	void ShowAll(bool bCond);

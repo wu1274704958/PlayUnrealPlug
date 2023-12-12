@@ -22,15 +22,26 @@ void MsgReceive::UnInit()
 	if (NULL != hFileMapping)       CloseHandle(hFileMapping);  
 }
 
-void MsgReceive::ToWideChar(wchar_t* dst, int len, char* src)
+bool MsgReceive::RegisterMsgReceiver(int64 id, ILocalMemMsg* pMsg)
 {
-	for(int i = 0;i < len;i += 2)
-	{
-		dst[i / 2] =  src[i + 1] << 8 | src[i];
-	}
+	if(MsgTable.find(id) != MsgTable.end())
+		return false;
+	MsgTable[id] = pMsg;
+	return true;
 }
 
-std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
+void MsgReceive::UnRegisterMsgReceiver(int64 id)
+{
+	MsgTable.erase(id);
+}
+
+void MsgReceive::OnNotifyMsg(int64 id, const TSharedPtr<FJsonObject>& JsonObject)
+{
+	if(MsgTable.find(id) != MsgTable.end())
+		MsgTable[id]->Parse(id,JsonObject);
+}
+
+int64_t MsgReceive::CheckHasMsg()
 { 
 	LPVOID lpShareMemory    = NULL;  
 	std::unique_ptr<RankMsg> msg = nullptr;
@@ -38,7 +49,10 @@ std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
 	if(hFileMapping == NULL)
 		Init();
 	if(hFileMapping == NULL)
-		return std::make_pair(-1,nullptr);
+	{
+		ret = -1;
+		goto END;
+	}
 	
 	lpShareMemory = MapViewOfFile(hFileMapping,  
 		FILE_MAP_ALL_ACCESS,  
@@ -48,36 +62,27 @@ std::pair<int64_t,std::unique_ptr<RankMsg>> MsgReceive::CheckHasMsg()
 	
 	if (NULL != lpShareMemory && *static_cast<char*>(lpShareMemory) == 1)  
 	{
-		wchar_t buf[MAX_MSG_SIZE - 2] = {0};
+		auto id = (short*)(static_cast<char*>(lpShareMemory) + 1);
+		constexpr int Offset = 3;
+		wchar_t buf[MAX_MSG_SIZE - Offset] = {0};
 		int n1 = MultiByteToWideChar(CP_ACP, 0,
-		static_cast<char*>(lpShareMemory) + 2, strlen(static_cast<char*>(lpShareMemory) + 2), buf, MAX_MSG_SIZE - 2);
+		static_cast<char*>(lpShareMemory) + Offset, strlen(static_cast<char*>(lpShareMemory) + Offset), buf, MAX_MSG_SIZE - Offset);
 		FString fstr(buf);
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(fstr);
 		if(!FJsonSerializer::Deserialize(Reader,JsonObject))
 		{
-			return std::make_pair(-1,nullptr);
+			ret = -3;
+			goto END;
 		}
-		msg = std::make_unique<RankMsg>();
-		msg->Title = JsonObject->GetStringField("Title");
-		auto Items = JsonObject->GetArrayField("Items");
-		for (int i = 0; i < Items.Num(); ++i)
-		{
-			RankItem item;
-			item.Name = Items[i]->AsObject()->GetStringField("Name");
-			item.Icon = Items[i]->AsObject()->GetStringField("Icon");
-			item.Score = Items[i]->AsObject()->GetIntegerField("Score");
-			msg->Items.push_back(item);
-		}
-		for(int i = 0;i < MAX_MSG_SIZE;++i)
-		{
-			static_cast<char*>(lpShareMemory)[i] = 0;
-		}
-		if (NULL != lpShareMemory)      UnmapViewOfFile(lpShareMemory);  
-		return std::make_pair(0,std::move(msg));
+		OnNotifyMsg(*id,JsonObject);
+		memset(lpShareMemory,0,MAX_MSG_SIZE);
+		ret = 0;
 	}
+	END:
 	if(NULL == lpShareMemory)
 		ret = GetLastError();
-	if (NULL != lpShareMemory)      UnmapViewOfFile(lpShareMemory);  
-	return std::make_pair(ret, nullptr);
+	if (NULL != lpShareMemory)
+		UnmapViewOfFile(lpShareMemory);  
+	return ret;
 }

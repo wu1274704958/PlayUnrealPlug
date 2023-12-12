@@ -64,6 +64,30 @@ void URankDataBridge::BeginPlay()
 	ShowAll(false);
 #endif
 	m_MsgReceive.Init();
+	m_MsgReceive.RegisterMsgReceiver(int64(ELocalMsgType::Settlement),this);
+}
+
+bool URankDataBridge::Parse(int64 id, const TSharedPtr<FJsonObject>& JsonObject)
+{
+	auto msg = std::make_unique<RankMsg>();
+	msg->Title = JsonObject->GetStringField("Title");
+	auto Items = JsonObject->GetArrayField("Items");
+	for (int i = 0; i < Items.Num(); ++i)
+	{
+		RankItem item;
+		item.Name = Items[i]->AsObject()->GetStringField("Name");
+		item.Icon = Items[i]->AsObject()->GetStringField("Icon");
+		item.Score = Items[i]->AsObject()->GetIntegerField("Score");
+		msg->Items.push_back(item);
+	}
+	ShowAll(true);
+	CallAllItemResetPos();
+	SetTitle(msg->Title);
+	SetItems(msg->Items);
+	State = 1;
+	CurrShowTime = 0.0f;
+	PlayItemStartAni();
+	return true;
 }
 
 void URankDataBridge::ShowAll(bool bCond)
@@ -139,16 +163,7 @@ void URankDataBridge::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 		case 0:
 			{
 				auto msg = m_MsgReceive.CheckHasMsg();
-				if(msg.first == 0)
-				{
-					ShowAll(true);
-					CallAllItemResetPos();
-					SetTitle(msg.second->Title);
-					SetItems(msg.second->Items);
-					State = 1;
-					CurrShowTime = 0.0f;
-					PlayItemStartAni();
-				}else
+				if(msg < 0)
 				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
